@@ -1,8 +1,7 @@
 
 library ieee;
-library work;
 use ieee.std_logic_1164.all;
-use work.std_logic_arith.all;
+use ieee.std_logic_arith.all;
 
 
 entity TB_FILE_READ is
