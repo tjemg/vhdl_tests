@@ -1,0 +1,166 @@
+Release 10.1 par K.31 (lin)
+Copyright (c) 1995-2008 Xilinx, Inc.  All rights reserved.
+
+yoda::  Sun Mar 01 22:31:02 2015
+
+par -w -intstyle ise -ol std -t 1 top_level_map.ncd top_level.ncd top_level.pcf
+ 
+
+
+Constraints file: top_level.pcf.
+Loading device for application Rf_Device from file '2s300e.nph' in environment /opt/Xilinx/10.1/ISE.
+   "top_level" is an NCD, version 3.2, device xc2s300e, package pq208, speed -6
+
+Initializing temperature to 85.000 Celsius. (default - Range: -40.000 to 85.000 Celsius)
+Initializing voltage to 1.700 Volts. (default - Range: 1.700 to 1.900 Volts)
+
+INFO:Par:282 - No user timing constraints were detected or you have set the option to ignore timing constraints ("par
+   -x"). Place and Route will run in "Performance Evaluation Mode" to automatically improve the performance of all
+   internal clocks in this design. The PAR timing summary will list the performance achieved for each clock. Note: For
+   the fastest runtime, set the effort level to "std".  For best performance, set the effort level to "high". For a
+   balance between the fastest runtime and best performance, set the effort level to "med".
+
+Device speed data version:  "PRODUCTION 1.18 2008-01-09".
+
+
+Device Utilization Summary:
+
+   Number of GCLKs                           1 out of 4      25%
+   Number of External GCLKIOBs               1 out of 4      25%
+      Number of LOCed GCLKIOBs               1 out of 1     100%
+
+   Number of External IOBs                  12 out of 142     8%
+      Number of LOCed IOBs                  12 out of 12    100%
+
+   Number of SLICEs                          4 out of 3072    1%
+
+
+Overall effort level (-ol):   Standard 
+Placer effort level (-pl):    High 
+Placer cost table entry (-t): 1
+Router effort level (-rl):    Standard 
+
+
+Starting Placer
+
+Phase 1.1
+Phase 1.1 (Checksum:9896c7) REAL time: 0 secs 
+
+Phase 2.7
+Phase 2.7 (Checksum:1312cfe) REAL time: 0 secs 
+
+Phase 3.31
+Phase 3.31 (Checksum:1c9c37d) REAL time: 0 secs 
+
+Phase 4.23
+Phase 4.23 (Checksum:26259fc) REAL time: 0 secs 
+
+Phase 5.3
+Phase 5.3 (Checksum:2faf07b) REAL time: 0 secs 
+
+Phase 6.5
+Phase 6.5 (Checksum:39386fa) REAL time: 0 secs 
+
+Phase 7.8
+.
+Phase 7.8 (Checksum:9929be) REAL time: 0 secs 
+
+Phase 8.5
+Phase 8.5 (Checksum:4c4b3f8) REAL time: 0 secs 
+
+Phase 9.18
+Phase 9.18 (Checksum:55d4a77) REAL time: 0 secs 
+
+Phase 10.5
+Phase 10.5 (Checksum:5f5e0f6) REAL time: 0 secs 
+
+REAL time consumed by placer: 0 secs 
+CPU  time consumed by placer: 0 secs 
+Writing design to file top_level.ncd
+
+
+Total REAL time to Placer completion: 0 secs 
+Total CPU time to Placer completion: 0 secs 
+
+Starting Router
+
+Phase 1: 48 unrouted;       REAL time: 0 secs 
+
+Phase 2: 40 unrouted;       REAL time: 0 secs 
+
+Phase 3: 3 unrouted;       REAL time: 0 secs 
+
+Phase 4: 3 unrouted; (0)      REAL time: 0 secs 
+
+Phase 5: 3 unrouted; (0)      REAL time: 0 secs 
+
+Phase 6: 0 unrouted; (0)      REAL time: 0 secs 
+
+Phase 7: 0 unrouted; (0)      REAL time: 0 secs 
+
+Phase 8: 0 unrouted; (0)      REAL time: 0 secs 
+
+Phase 9: 0 unrouted; (0)      REAL time: 0 secs 
+
+Total REAL time to Router completion: 0 secs 
+Total CPU time to Router completion: 0 secs 
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+Generating "PAR" statistics.
+
+**************************
+Generating Clock Report
+**************************
+
++---------------------+--------------+------+------+------------+-------------+
+|        Clock Net    |   Resource   |Locked|Fanout|Net Skew(ns)|Max Delay(ns)|
++---------------------+--------------+------+------+------------+-------------+
+|        CLK_IN_BUFGP |      GCLKBUF1| No   |    8 |  0.056     |  0.657      |
++---------------------+--------------+------+------+------------+-------------+
+
+* Net Skew is the difference between the minimum and maximum routing
+only delays for the net. Note this is different from Clock Skew which
+is reported in TRCE timing report. Clock Skew is the difference between
+the minimum and maximum path delays which includes logic delays.
+
+Timing Score: 0
+
+Asterisk (*) preceding a constraint indicates it was not met.
+   This may be due to a setup or hold violation.
+
+------------------------------------------------------------------------------------------------------
+  Constraint                                | Requested  | Actual     | Logic  | Absolute   |Number of
+                                            |            |            | Levels | Slack      |errors   
+------------------------------------------------------------------------------------------------------
+
+
+All constraints were met.
+
+
+Generating Pad Report.
+
+All signals are completely routed.
+
+Total REAL time to PAR completion: 0 secs 
+Total CPU time to PAR completion: 0 secs 
+
+Peak Memory Usage:  102 MB
+
+Placement: Completed - No errors found.
+Routing: Completed - No errors found.
+
+Number of error messages: 0
+Number of warning messages: 0
+Number of info messages: 1
+
+Writing design to file top_level.ncd
+
+
+
+PAR done!

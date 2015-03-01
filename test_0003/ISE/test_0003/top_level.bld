@@ -1,0 +1,35 @@
+Release 10.1 ngdbuild K.31 (lin)
+Copyright (c) 1995-2008 Xilinx, Inc.  All rights reserved.
+
+Command Line: /opt/Xilinx/10.1/ISE/bin/lin/unwrapped/ngdbuild -ise
+/home/gasiba/Tests/test_0003/ISE/test_0003/test_0003.ise -intstyle ise -dd _ngo
+-nt timestamp -i -p xc2s300e-pq208-6 top_level.ngc top_level.ngd
+
+Reading NGO file "/home/gasiba/Tests/test_0003/ISE/test_0003/top_level.ngc" ...
+Reading in constraint information from 'top_level.ucf'...
+Gathering constraint information from source properties...
+Done.
+
+Resolving constraint associations...
+Checking Constraint Associations...
+Done...
+Checking Partitions ...
+
+Checking expanded design ...
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+NGDBUILD Design Results Summary:
+  Number of errors:     0
+  Number of warnings:   0
+
+Total memory usage is 65312 kilobytes
+
+Writing NGD file "top_level.ngd" ...
+
+Writing NGDBUILD log file "top_level.bld"...

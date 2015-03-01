@@ -1,0 +1,3 @@
+MODULE top_level
+	SUBMODULE rom
+		INSTANCE XLXI_1

@@ -1,0 +1,5 @@
+# begin LFP file /home/gasiba/Tests/test_0003/ISE/test_0003/top_level.lfp
+designfile top_level.vhd
+parttype xc2s300e-6-pq208
+bus_delimiter 0;
+set_busdelim_onsave 1;
