@@ -1,0 +1,15 @@
+# Pin Assignments
+NET "ADDR<0>"  LOC = "p93"  ;
+NET "ADDR<1>"  LOC = "p94"  ;
+NET "ADDR<2>"  LOC = "p95"  ;
+NET "ADDR<3>"  LOC = "p96"  ;
+NET "CLK"      LOC = "p77"  ;
+NET "DOUT<0>"  LOC = "p55"  ;
+NET "DOUT<1>"  LOC = "p56"  ;
+NET "DOUT<2>"  LOC = "p57"  ;
+NET "DOUT<3>"  LOC = "p58"  ;
+NET "DOUT<4>"  LOC = "p59"  ;
+NET "DOUT<5>"  LOC = "p60"  ;
+NET "DOUT<6>"  LOC = "p61"  ;
+NET "DOUT<7>"  LOC = "p62"  ;
+
