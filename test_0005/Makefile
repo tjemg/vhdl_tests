@@ -7,17 +7,31 @@ SOURCES = zpu_config_trace.vhd            \
           txt_util.vhd                    \
           sim_fpga_top.vhd                \
           $(ZPUCORE)                      \
-	  dram_hello.vhd                  \
+	  prog_ram.vhd                    \
           timer.vhd                       \
           io.vhd                          \
           trace.vhd
 OBJECTS = $(subst .vhd,.o,$(SOURCES))
 
-all: $(OBJECTS)
+all: ram $(OBJECTS)
 	ghdl -e $(FLAGS) $(TARGET)
+
+ram: zpuramgen
+	/opt/ZPU/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -O3 -Wl,--relax
+	/opt/ZPU/bin/zpu-elf-objdump --disassemble-all hello.elf > hello.dis
+	/opt/ZPU/bin/zpu-elf-objcopy -O binary hello.elf hello.bin
+	./zpuramgen hello.bin > prog_ram.vhd
+	chmod -x hello.bin
+	chmod -x hello.elf
+
+zpuramgen:
+	gcc -o zpuramgen zpuramgen.c
 
 %.o: %.vhd
 	ghdl -a $(FLAGS) $<
+
+prog_ram.o:
+	ghdl -a $(FLAGS) prog_ram.vhd
 
 run:
 	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
@@ -46,7 +60,14 @@ clean:
 	rm -rf *.cf
 	rm -rf *.ghw
 	rm -rf *.bit
+	rm -rf *.elf
+	rm -rf *.dis
+	rm -rf *.ram
+	rm -rf *.bin
+	rm -rf prog_ram.vhd
 	rm -rf log.txt
+	rm -rf trace.txt
 	rm -rf $(TARGET)
 	rm -rf build
+	rm -rf zpuramgen
 	rm -rf xlnx_auto*

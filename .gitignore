@@ -5,3 +5,6 @@
 *~
 *.txt
 *_top
+*.elf
+*.dis
+*.ram
