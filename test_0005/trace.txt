@@ -1,0 +1,3 @@
+#pc,opcode,sp,top_of_stack 
+#----------
+ 
