@@ -18,6 +18,7 @@ all: ram $(OBJECTS)
 
 ram: zpuramgen
 	/opt/ZPU/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -O3 -Wl,--relax
+	#/opt/ZPU/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -Os -abel -Wl,--relax  # DOES NOT WORK!
 	/opt/ZPU/bin/zpu-elf-objdump --disassemble-all hello.elf > hello.dis
 	/opt/ZPU/bin/zpu-elf-objcopy -O binary hello.elf hello.bin
 	./zpuramgen hello.bin > prog_ram.vhd
