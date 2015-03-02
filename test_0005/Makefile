@@ -2,15 +2,15 @@ ZPUCORE = zpu_core.vhd
 FLAGS   = --ieee=synopsys
 TARGET  = fpga_top
 DEVICE  = xc2s300e-6-pq208
-SOURCES = txt_util.vhd                    \
-          zpu_config.vhd                  \
+SOURCES = zpu_config_trace.vhd            \
           zpupkg.vhd                      \
-          trace.vhd                       \
-          io.vhd                          \
-          timer.vhd                       \
+          txt_util.vhd                    \
+          sim_fpga_top.vhd                \
           $(ZPUCORE)                      \
-          rom_mem.vhd                     \
-          sim_small_fpga_top_noint.vhd
+	  dram_hello.vhd                  \
+          timer.vhd                       \
+          io.vhd                          \
+          trace.vhd
 OBJECTS = $(subst .vhd,.o,$(SOURCES))
 
 all: $(OBJECTS)
@@ -20,7 +20,7 @@ all: $(OBJECTS)
 	ghdl -a $(FLAGS) $<
 
 run:
-	ghdl -r $(TARGET) --wave=test.ghw --stop-time=500ns
+	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
 
 bit:
 	rm -rf build

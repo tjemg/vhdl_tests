@@ -1,2 +1,7 @@
 *.vcd
 *.swp
+*.o
+*.cf
+*~
+*.txt
+*_top

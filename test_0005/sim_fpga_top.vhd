@@ -1,6 +1,7 @@
+--------------------------------------------------------------------------------
 -- ZPU
 --
--- Copyright 2004-2008 oharboe - Øyvind Harboe - oyvind.harboe@zylin.com
+-- Copyright 2004-2008 oharboe - yvind Harboe - oyvind.harboe@zylin.com
 -- 
 -- The FreeBSD license
 -- 
@@ -31,25 +32,25 @@
 -- The views and conclusions contained in the software and documentation
 -- are those of the authors and should not be interpreted as representing
 -- official policies, either expressed or implied, of the ZPU Project.
+--------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
 
 library work;
 use work.zpu_config.all;
-use work.zpupkg.all;
 
 
 entity fpga_top is
 end fpga_top;
 
+use work.zpupkg.all;
 
 architecture behave of fpga_top is
 
 
     signal clk    : std_logic;
-
+    
     signal areset : std_logic := '1';
  
  
@@ -99,7 +100,6 @@ architecture behave of fpga_top is
 
     signal break                : std_logic;
 
-
 begin
 
     zpu: zpu_core 
@@ -118,6 +118,19 @@ begin
         break               => break
     );
 
+    dram_imp: dram 
+    port map (
+        clk             => clk ,
+        areset          => areset,
+        mem_busy        => dram_mem_busy, 
+        mem_read        => dram_mem_read,
+        mem_write       => mem_write, 
+        mem_addr        => mem_addr(maxAddrBit downto 0), 
+        mem_writeEnable => dram_mem_writeEnable,  
+        mem_readEnable  => dram_mem_readEnable,
+        mem_writeMask   => mem_writeMask
+    );
+
 
     ioMap: zpu_io 
     port map (
@@ -126,7 +139,7 @@ begin
         busy        => io_busy,
         writeEnable => io_mem_writeEnable,
         readEnable  => io_mem_readEnable,
-        write       => mem_write,
+        write       => mem_write(wordSize-1 downto 0),
         read        => io_mem_read,
         addr        => mem_addr(maxAddrBit downto minAddrBit)
     );
@@ -135,9 +148,9 @@ begin
     dram_mem_readEnable  <= mem_readEnable  and not mem_addr(ioBit);
     io_mem_writeEnable   <= mem_writeEnable and mem_addr(ioBit);
     io_mem_readEnable    <= mem_readEnable  and mem_addr(ioBit);
-    mem_busy             <= io_busy;
+    mem_busy             <= io_busy or dram_mem_busy or io_busy;
     
-
+    
     -- Memory reads either come from IO or DRAM. We need to pick the right one.
     memorycontrol: process(dram_mem_read, dram_ready, io_ready, io_mem_read)
     begin
@@ -147,11 +160,9 @@ begin
         end if;
              
         if io_ready='1' then
-            mem_read <= (others => '0');
             mem_read <= io_mem_read;
         end if;
     end process;
-
 
     
     io_ready <= (io_reading or io_mem_readEnable) and not io_busy;
@@ -162,7 +173,6 @@ begin
             enable     <= '0';
             io_reading <= '0';
             dram_ready <= '0';
-            
         elsif rising_edge(clk) then
             enable     <= '1';
             io_reading <= io_busy or io_mem_readEnable; 
@@ -171,7 +181,7 @@ begin
     end process;
 
     -- wiggle the clock @ 100MHz
-    clock: process
+    clock : process
        begin
             clk <= '0';
            wait for 5 ns; 
