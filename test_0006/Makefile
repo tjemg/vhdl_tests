@@ -12,7 +12,7 @@ SOURCES = zpu_config.vhd     \
 OBJECTS = $(subst .vhd,.o,$(SOURCES))
 MAIN    = main
 
-all: ram $(OBJECTS)
+all: $(OBJECTS) prog_ram.o
 	ghdl -e $(FLAGS) $(TARGET)
 
 ram: zpuramgen
@@ -29,11 +29,11 @@ zpuramgen:
 %.o: %.vhd
 	ghdl -a $(FLAGS) $<
 
-prog_ram.o:
+prog_ram.o: ram
 	ghdl -a $(FLAGS) prog_ram.vhd
 
 run:
-	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
+	ghdl -r $(TARGET) --wave=test.ghw --stop-time=5ms
 
 bit:
 	rm -rf build
