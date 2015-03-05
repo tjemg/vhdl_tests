@@ -391,11 +391,11 @@ begin
               elsif tOpcode(5 downto 0) = OpCode_Lessthan then
                 tNextInsn := Insn_Lessthan;
               elsif tOpcode(5 downto 0) = OpCode_Lessthanorequal then
-                --tNextInsn :=Insn_Lessthanorequal;
+                tNextInsn :=Insn_Lessthanorequal;
               elsif tOpcode(5 downto 0) = OpCode_Ulessthan then
                 tNextInsn := Insn_Ulessthan;
               elsif tOpcode(5 downto 0) = OpCode_Ulessthanorequal then
-                --tNextInsn :=Insn_Ulessthanorequal;
+                tNextInsn :=Insn_Ulessthanorequal;
               elsif tOpcode(5 downto 0) = OpCode_Loadb then
                 tNextInsn := Insn_Loadb;
               elsif tOpcode(5 downto 0) = OpCode_Mult then

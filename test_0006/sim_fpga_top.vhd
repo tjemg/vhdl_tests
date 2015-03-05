@@ -109,15 +109,16 @@ begin
 
     writeControl: process(clk,io_writeEn,mem_write)
     begin
-	if rising_edge(clk) then
+        if rising_edge(clk) then
             if io_writeEn ='1' then
                 IO_port_0 <= mem_write;
             end if;
         end if;
     end process;
 
-            io_readEn    <= mem_readEnable  and     mem_addr(maxAddrBitIncIO);
-            io_writeEn   <= mem_writeEnable and     mem_addr(maxAddrBitIncIO);
+    io_readEn    <= mem_readEnable  and     mem_addr(maxAddrBitIncIO);
+    io_writeEn   <= mem_writeEnable and     mem_addr(maxAddrBitIncIO);
+    dram_writeEn <= mem_writeEnable and not mem_addr(maxAddrBitIncIO);
 
     memoryControlSync: process(clk, areset)
     begin
@@ -127,7 +128,6 @@ begin
         elsif rising_edge(clk) then
             enable       <= '1';
             dram_ready   <= mem_readEnable  and not mem_addr(maxAddrBitIncIO);
-            dram_writeEn <= mem_writeEnable and not mem_addr(maxAddrBitIncIO);
         end if;
     end process;
 
