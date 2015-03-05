@@ -51,7 +51,7 @@ bit:
 	cp build/*.bit .
 
 show:
-	gtkwave test.ghw
+	gtkwave test.gtkw
 
 clean:
 	rm -rf *.o
