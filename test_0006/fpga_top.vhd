@@ -63,7 +63,7 @@ begin
         mem_writeMask   => mem_writeMask
     );
 
-    readControl: process(dram_mem_read, dram_ready, IO_port_0)
+    readControl: process(dram_mem_read, dram_ready, IO_port_0, io_readEn)
     begin
 --        mem_read <= (others => 'U');
         mem_read <= (others=>'0');
