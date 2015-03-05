@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 
 package zpu_config is
 
-    constant    Generate_Trace      : boolean := false;
+    constant    Generate_Trace      : boolean := true;
     constant    wordPower           : integer := 5;
     -- during simulation, set this to '0' to get matching trace.txt 
     constant    DontCareValue       : std_logic := '0';

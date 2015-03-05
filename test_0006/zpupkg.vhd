@@ -199,6 +199,7 @@ package zpupkg is
   constant OpCode_Neq              : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(47, 6));
   --
   constant OpCode_Sub              : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(49, 6));
+  constant OpCode_Xor              : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(50, 6));
   constant OpCode_Loadb            : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(51, 6));
   constant OpCode_Storeb           : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(52, 6));
   --

@@ -91,6 +91,7 @@ architecture behave of zpu_core is
     Insn_Add,
     Insn_Or,
     Insn_And,
+    Insn_Xor,
     Insn_Store,
     Insn_AddSP,
     Insn_Shift,
@@ -122,7 +123,8 @@ architecture behave of zpu_core is
     Insn_Storeb,
     Insn_InsnFetch,
     Insn_AShiftLeft,
-    Insn_AShiftRight
+    Insn_AShiftRight,
+    Insn_LShiftRight
     );
 
   type StateType is (
@@ -152,6 +154,7 @@ architecture behave of zpu_core is
     State_Interrupt,
     State_AShiftLeft2,
     State_AShiftRight2,
+    State_LShiftRight2,
     State_ShiftDone
     ); 
 
@@ -422,6 +425,10 @@ begin
                 tNextInsn := Insn_AShiftLeft;
               elsif tOpcode(5 downto 0) = OpCode_AShiftRight then
                 tNextInsn := Insn_AShiftRight;
+              elsif tOpcode(5 downto 0) = OpCode_LShiftRight then
+                tNextInsn := Insn_LShiftRight;
+              elsif tOpcode(5 downto 0) = OpCode_Xor then
+                tNextInsn := Insn_Xor;
               end if;
             elsif (tOpcode(7 downto 4) = OpCode_AddSP) then
               if tSpOffset = 0 then
@@ -647,6 +654,14 @@ begin
               shiftB <= stackB;
               state  <= State_AShiftRight2;
 
+            when Insn_LShiftRight =>
+              begin_inst <= '1';
+              idim_flag  <= '0';
+
+              shiftA <= stackA;
+              shiftB <= stackB;
+              state  <= State_LShiftRight2;
+
             when Insn_Add =>
               if in_mem_busy = '0' then
                 begin_inst <= '1';
@@ -706,6 +721,18 @@ begin
                 idim_flag  <= '0';
 
                 stackA         <= stackA and stackB;
+                mem_readEnable <= '1';
+                mem_addr       <= std_logic_vector(incIncSp);
+                sp             <= incSp;
+                state          <= State_Popped;
+              end if;
+
+            when Insn_Xor =>
+              if in_mem_busy = '0' then
+                begin_inst <= '1';
+                idim_flag  <= '0';
+
+                stackA         <= stackA xor stackB;
                 mem_readEnable <= '1';
                 mem_addr       <= std_logic_vector(incIncSp);
                 sp             <= incSp;
@@ -1042,6 +1069,14 @@ begin
           else
 	    shiftA         <= (shiftA - 1);
             shiftB         <= shiftB(wordSize-1) & shiftB(wordSize-1 downto 1);
+          end if;
+
+        when State_LShiftRight2 =>
+          if shiftA = "00000000" then
+            state          <= State_ShiftDone;
+          else
+	    shiftA         <= (shiftA - 1);
+            shiftB         <= '0' & shiftB(wordSize-1 downto 1);
           end if;
 
         when State_ShiftDone =>

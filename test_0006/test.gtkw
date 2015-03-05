@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Thu Mar  5 12:56:23 2015
+[*] Thu Mar  5 21:54:55 2015
 [*]
 [dumpfile] "test.ghw"
-[dumpfile_mtime] "Thu Mar  5 12:55:41 2015"
-[dumpfile_size] 983228
+[dumpfile_mtime] "Thu Mar  5 21:53:18 2015"
+[dumpfile_size] 8275039
 [savefile] "test.gtkw"
 [timestart] 0
 [size] 1366 715
 [pos] -1 -1
-*-34.287220 8200000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-38.526192 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.sim_fpga_top.
 [sst_width] 210
@@ -19,9 +19,13 @@
 @28
 top.sim_fpga_top.clk
 top.sim_fpga_top.areset
-@8022
+@420
+#{top.sim_fpga_top.io_port0[31:0]} top.sim_fpga_top.io_port0[31] top.sim_fpga_top.io_port0[30] top.sim_fpga_top.io_port0[29] top.sim_fpga_top.io_port0[28] top.sim_fpga_top.io_port0[27] top.sim_fpga_top.io_port0[26] top.sim_fpga_top.io_port0[25] top.sim_fpga_top.io_port0[24] top.sim_fpga_top.io_port0[23] top.sim_fpga_top.io_port0[22] top.sim_fpga_top.io_port0[21] top.sim_fpga_top.io_port0[20] top.sim_fpga_top.io_port0[19] top.sim_fpga_top.io_port0[18] top.sim_fpga_top.io_port0[17] top.sim_fpga_top.io_port0[16] top.sim_fpga_top.io_port0[15] top.sim_fpga_top.io_port0[14] top.sim_fpga_top.io_port0[13] top.sim_fpga_top.io_port0[12] top.sim_fpga_top.io_port0[11] top.sim_fpga_top.io_port0[10] top.sim_fpga_top.io_port0[9] top.sim_fpga_top.io_port0[8] top.sim_fpga_top.io_port0[7] top.sim_fpga_top.io_port0[6] top.sim_fpga_top.io_port0[5] top.sim_fpga_top.io_port0[4] top.sim_fpga_top.io_port0[3] top.sim_fpga_top.io_port0[2] top.sim_fpga_top.io_port0[1] top.sim_fpga_top.io_port0[0]
+@8420
 #{top.sim_fpga_top.io_port0[31:0]} top.sim_fpga_top.io_port0[31] top.sim_fpga_top.io_port0[30] top.sim_fpga_top.io_port0[29] top.sim_fpga_top.io_port0[28] top.sim_fpga_top.io_port0[27] top.sim_fpga_top.io_port0[26] top.sim_fpga_top.io_port0[25] top.sim_fpga_top.io_port0[24] top.sim_fpga_top.io_port0[23] top.sim_fpga_top.io_port0[22] top.sim_fpga_top.io_port0[21] top.sim_fpga_top.io_port0[20] top.sim_fpga_top.io_port0[19] top.sim_fpga_top.io_port0[18] top.sim_fpga_top.io_port0[17] top.sim_fpga_top.io_port0[16] top.sim_fpga_top.io_port0[15] top.sim_fpga_top.io_port0[14] top.sim_fpga_top.io_port0[13] top.sim_fpga_top.io_port0[12] top.sim_fpga_top.io_port0[11] top.sim_fpga_top.io_port0[10] top.sim_fpga_top.io_port0[9] top.sim_fpga_top.io_port0[8] top.sim_fpga_top.io_port0[7] top.sim_fpga_top.io_port0[6] top.sim_fpga_top.io_port0[5] top.sim_fpga_top.io_port0[4] top.sim_fpga_top.io_port0[3] top.sim_fpga_top.io_port0[2] top.sim_fpga_top.io_port0[1] top.sim_fpga_top.io_port0[0]
 @20000
+-
+-
 -
 -
 -
