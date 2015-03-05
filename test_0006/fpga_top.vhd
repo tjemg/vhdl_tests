@@ -66,6 +66,7 @@ begin
     readControl: process(dram_mem_read, dram_ready, IO_port_0)
     begin
 --        mem_read <= (others => 'U');
+        mem_read <= (others=>'0');
         if dram_ready ='1' then
             mem_read <= dram_mem_read;
         end if;
