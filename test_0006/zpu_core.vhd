@@ -121,7 +121,8 @@ architecture behave of zpu_core is
     Insn_Break,
     Insn_Storeb,
     Insn_InsnFetch,
-    Insn_AShiftLeft
+    Insn_AShiftLeft,
+    Insn_AShiftRight
     );
 
   type StateType is (
@@ -150,7 +151,8 @@ architecture behave of zpu_core is
     State_Idle,
     State_Interrupt,
     State_AShiftLeft2,
-    State_AShiftLeft3
+    State_AShiftRight2,
+    State_ShiftDone
     ); 
 
 
@@ -418,6 +420,8 @@ begin
                 tNextInsn :=Insn_PopPCrel;
               elsif tOpcode(5 downto 0) = OpCode_AShiftLeft then
                 tNextInsn := Insn_AShiftLeft;
+              elsif tOpcode(5 downto 0) = OpCode_AShiftRight then
+                tNextInsn := Insn_AShiftRight;
               end if;
             elsif (tOpcode(7 downto 4) = OpCode_AddSP) then
               if tSpOffset = 0 then
@@ -634,6 +638,14 @@ begin
               shiftA <= stackA;
               shiftB <= stackB;
               state  <= State_AShiftLeft2;
+
+            when Insn_AShiftRight =>
+              begin_inst <= '1';
+              idim_flag  <= '0';
+
+              shiftA <= stackA;
+              shiftB <= stackB;
+              state  <= State_AShiftRight2;
 
             when Insn_Add =>
               if in_mem_busy = '0' then
@@ -1017,14 +1029,22 @@ begin
           end if;
 
         when State_AShiftLeft2 =>
-          --if shiftA = "00000000" then
-          --  state          <= State_AShiftLeft3;
-          --else
-	  --  shiftA         <= (shiftA - 1);
-          --  shiftB         <= (shiftB sll 1);
-          --end if;
+          if shiftA = "00000000" then
+            state          <= State_ShiftDone;
+          else
+	    shiftA         <= (shiftA - 1);
+            shiftB         <= (shiftB sll 1);
+          end if;
 
-        when State_AShiftLeft3 =>
+        when State_AShiftRight2 =>
+          if shiftA = "00000000" then
+            state          <= State_ShiftDone;
+          else
+	    shiftA         <= (shiftA - 1);
+            shiftB         <= shiftB(wordSize-1) & shiftB(wordSize-1 downto 1);
+          end if;
+
+        when State_ShiftDone =>
           if in_mem_busy = '0' then
             stackA         <= shiftB;
             mem_readEnable <= '1';

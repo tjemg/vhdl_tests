@@ -21,11 +21,11 @@
 
 void _premain(void) {
     volatile int *pnt = (volatile int *)0x1000;
-    int i   = 0xffffffff;
+    int i   = 0x7fffffff;
     volatile shiftLength = 2;
 
     while (1) {
 	    *pnt = i;
-	    i <<= shiftLength;
+	    i >>= shiftLength;
     }
 }
