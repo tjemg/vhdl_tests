@@ -6,7 +6,7 @@ run
 -ofn top_level
 -ofmt NGC
 -p xc2s300e-6-pq208
--top rom
+-top fpga_top
 -opt_mode Area
 -opt_level 1
 -iuc NO

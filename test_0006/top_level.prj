@@ -1,1 +1,5 @@
-vhdl work "../rom_mem.vhd"
+vhdl work "../zpupkg.vhd"
+vhdl work "../prog_ram.vhd"
+vhdl work "../zpu_config.vhd"
+vhdl work "../zpu_core.vhd"
+vhdl work "../fpga_top.vhd"

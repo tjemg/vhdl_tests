@@ -1,14 +1,14 @@
 ZPUCORE = zpu_core.vhd
 FLAGS   = --ieee=synopsys
-TARGET  = fpga_top
+TARGET  = sim_fpga_top
 DEVICE  = xc2s300e-6-pq208
 SOURCES = zpu_config.vhd     \
           zpupkg.vhd         \
           txt_util.vhd       \
-          sim_fpga_top.vhd   \
           $(ZPUCORE)         \
-	  prog_ram.vhd       \
-          trace.vhd
+          trace.vhd          \
+          fpga_top.vhd       \
+          sim_fpga_top.vhd
 OBJECTS = $(subst .vhd,.o,$(SOURCES))
 MAIN    = main
 
