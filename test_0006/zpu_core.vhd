@@ -120,7 +120,8 @@ architecture behave of zpu_core is
     Insn_Sub,
     Insn_Break,
     Insn_Storeb,
-    Insn_InsnFetch
+    Insn_InsnFetch,
+    Insn_AShiftLeft
     );
 
   type StateType is (
@@ -147,7 +148,9 @@ architecture behave of zpu_core is
     State_BinaryOpResult2,
     State_BinaryOpResult,
     State_Idle,
-    State_Interrupt
+    State_Interrupt,
+    State_AShiftLeft2,
+    State_AShiftLeft3
     ); 
 
 
@@ -164,6 +167,10 @@ architecture behave of zpu_core is
   signal multResult          : unsigned(wordSize-1 downto 0);
   signal multA               : unsigned(wordSize-1 downto 0);
   signal multB               : unsigned(wordSize-1 downto 0);
+  signal shiftA              : unsigned(wordSize-1 downto 0);
+  signal shiftB              : unsigned(wordSize-1 downto 0);
+  signal shiftA_Next         : unsigned(wordSize-1 downto 0);
+  signal shiftB_Next         : unsigned(wordSize-1 downto 0);
   signal stackB              : unsigned(wordSize-1 downto 0);
   signal idim_flag           : std_logic;
   signal busy                : std_logic;
@@ -275,9 +282,6 @@ begin
       if (mem_writeEnable = '1') and (mem_readEnable = '1') then
         report "read/write collision" severity failure;
       end if;
-
-
-
 
       spOffset(4)          := not opcode(to_integer(pc(byteBits-1 downto 0)))(4);
       spOffset(3 downto 0) := unsigned(opcode(to_integer(pc(byteBits-1 downto 0)))(3 downto 0));
@@ -412,6 +416,8 @@ begin
                 tNextInsn := Insn_Sub;
               elsif tOpcode(5 downto 0) = OpCode_PopPCRel then
                 tNextInsn :=Insn_PopPCrel;
+              elsif tOpcode(5 downto 0) = OpCode_AShiftLeft then
+                tNextInsn := Insn_AShiftLeft;
               end if;
             elsif (tOpcode(7 downto 4) = OpCode_AddSP) then
               if tSpOffset = 0 then
@@ -461,6 +467,8 @@ begin
 
           decodedOpcode <= tDecodedOpcode;
           state         <= State_Execute;
+          shiftA        <= stackA;
+          shiftB        <= stackB;
 
 
 
@@ -618,6 +626,14 @@ begin
                 mem_write       <= std_logic_vector(stackB);
                 state           <= State_Resync;
               end if;
+
+            when Insn_AShiftLeft =>
+              begin_inst <= '1';
+              idim_flag  <= '0';
+
+              shiftA <= stackA;
+              shiftB <= stackB;
+              state  <= State_AShiftLeft2;
 
             when Insn_Add =>
               if in_mem_busy = '0' then
@@ -999,6 +1015,24 @@ begin
             stackB <= unsigned(mem_read);
             state  <= State_Execute;
           end if;
+
+        when State_AShiftLeft2 =>
+          --if shiftA = "00000000" then
+          --  state          <= State_AShiftLeft3;
+          --else
+	  --  shiftA         <= (shiftA - 1);
+          --  shiftB         <= (shiftB sll 1);
+          --end if;
+
+        when State_AShiftLeft3 =>
+          if in_mem_busy = '0' then
+            stackA         <= shiftB;
+            mem_readEnable <= '1';
+            mem_addr       <= std_logic_vector(incIncSp);
+            sp             <= incSp;
+            state          <= State_Popped;
+          end if;
+
 
         when others =>
           sp    <= (others => DontCareValue);
