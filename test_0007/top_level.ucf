@@ -1,4 +1,4 @@
 # Pin Assignments
 NET "CLK"    LOC = "p77"  ;
-NET "LED"    LOC = "p102"  ;
+NET "LED"    LOC = "p82"  ;
 
