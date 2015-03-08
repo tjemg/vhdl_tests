@@ -1,0 +1,6 @@
+In order to make Impact use LibUSB, need to set the following environment variable:
+
+export XIL_IMPACT_USE_LIBUSB=1
+
+Start Impact with the following command (impact 32bit on 64bit system):
+linux32 impact
