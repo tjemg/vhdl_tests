@@ -140,12 +140,15 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
+#define _N        "32"
+#define _PREFETCH "3"
+
 entity spi_slave is
     Generic (   
-        N : positive := 32;                                             -- 32bit serial word length is default
+        N : positive := _N;                                             -- 32bit serial word length is default
         CPOL : std_logic := '0';                                        -- SPI mode selection (mode 0 default)
         CPHA : std_logic := '0';                                        -- CPOL = clock polarity, CPHA = clock phase.
-        PREFETCH : positive := 3);                                      -- prefetch lookahead cycles
+        PREFETCH : positive := _PREFETCH);                              -- prefetch lookahead cycles
     Port (  
         clk_i : in std_logic := 'X';                                    -- internal interface clock (clocks di/do registers)
         spi_ssel_i : in std_logic := 'X';                               -- spi bus slave select line
@@ -358,7 +361,7 @@ begin
         state_next <= state_reg;                                        -- fsm control state
         case state_reg is
         
-            when (N) =>                                                 -- deassert 'di_rdy' and stretch do_valid
+            when (_N) =>                                                 -- deassert 'di_rdy' and stretch do_valid
                 wr_ack_next <= '0';                                     -- acknowledge data in transfer
                 di_req_next <= '0';                                     -- prefetch data request: deassert when shifting data
                 tx_bit_next <= sh_reg(N-1);                             -- output next MSbit
@@ -366,7 +369,7 @@ begin
                 sh_next(0) <= rx_bit_next;                              -- shift in rx bit into LSb
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (N-1) downto (PREFETCH+3) =>                           -- remove 'do_transfer' and shift bits
+            when (_N-1) downto (_PREFETCH+3) =>                           -- remove 'do_transfer' and shift bits
                 do_transfer_next <= '0';                                -- reset 'do_valid' transfer signal
                 di_req_next <= '0';                                     -- prefetch data request: deassert when shifting data
                 wr_ack_next <= '0';                                     -- remove data load ack for all but the load stages
@@ -375,7 +378,8 @@ begin
                 sh_next(0) <= rx_bit_next;                              -- shift in rx bit into LSb
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (PREFETCH+2) downto 3 =>                               -- raise prefetch 'di_req_o' signal
+            when (_PREFETCH+2)
+	         downto 3 =>                                            -- raise prefetch 'di_req_o' signal
                 di_req_next <= '1';                                     -- request data in advance to allow for pipeline delays
                 wr_ack_next <= '0';                                     -- remove data load ack for all but the load stages
                 tx_bit_next <= sh_reg(N-1);                             -- output next MSbit

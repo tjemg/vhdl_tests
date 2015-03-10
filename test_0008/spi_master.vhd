@@ -170,12 +170,15 @@ use ieee.std_logic_unsigned.all;
 -- integrated to your circuit.
 --================================================================================================================
 
+#define _N        "32"
+#define _PREFETCH "2"
+
 entity spi_master is
     Generic (   
-        N : positive := 32;                                             -- 32bit serial word length is default
+        N : positive := _N;                                             -- 32bit serial word length is default
         CPOL : std_logic := '0';                                        -- SPI mode selection (mode 0 default)
         CPHA : std_logic := '0';                                        -- CPOL = clock polarity, CPHA = clock phase.
-        PREFETCH : positive := 2;                                       -- prefetch lookahead cycles
+        PREFETCH : positive := _PREFETCH;                                       -- prefetch lookahead cycles
         SPI_2X_CLK_DIV : positive := 5);                                -- for a 100MHz sclk_i, yields a 10MHz SCK
     Port (  
         sclk_i : in std_logic := 'X';                                   -- high-speed serial interface system clock
@@ -502,7 +505,7 @@ begin
         state_next <= state_reg;                                        -- next state 
         case state_reg is
         
-            when (N+1) =>                                               -- this state is to enable SSEL before SCK
+            when (_N+1) =>                                               -- this state is to enable SSEL before SCK
                 spi_mosi_o <= sh_reg(N-1);                              -- shift out tx bit from the MSb
                 ssel_ena_next <= '1';                                   -- tx in progress: will assert SSEL
                 sck_ena_next <= '1';                                    -- enable SCK on next cycle (stays off on first SSEL clock cycle)
@@ -510,7 +513,7 @@ begin
                 wr_ack_next <= '0';                                     -- remove write acknowledge for all but the load stages
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (N) =>                                                 -- deassert 'di_rdy' and stretch do_valid
+            when (_N) =>                                                 -- deassert 'di_rdy' and stretch do_valid
                 spi_mosi_o <= sh_reg(N-1);                              -- shift out tx bit from the MSb
                 di_req_next <= '0';                                     -- prefetch data request: deassert when shifting data
                 sh_next(N-1 downto 1) <= sh_reg(N-2 downto 0);          -- shift inner bits
@@ -518,7 +521,7 @@ begin
                 wr_ack_next <= '0';                                     -- remove write acknowledge for all but the load stages
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (N-1) downto (PREFETCH+3) =>                           -- remove 'do_transfer' and shift bits
+            when (_N-1) downto (_PREFETCH+3) =>                           -- remove 'do_transfer' and shift bits
                 spi_mosi_o <= sh_reg(N-1);                              -- shift out tx bit from the MSb
                 di_req_next <= '0';                                     -- prefetch data request: deassert when shifting data
                 do_transfer_next <= '0';                                -- reset 'do_valid' transfer signal
@@ -527,7 +530,8 @@ begin
                 wr_ack_next <= '0';                                     -- remove write acknowledge for all but the load stages
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (PREFETCH+2) downto 2 =>                               -- raise prefetch 'di_req_o' signal
+            when (_PREFETCH+2)
+	    downto 2 =>                               -- raise prefetch 'di_req_o' signal
                 spi_mosi_o <= sh_reg(N-1);                              -- shift out tx bit from the MSb
                 di_req_next <= '1';                                     -- request data in advance to allow for pipeline delays
                 sh_next(N-1 downto 1) <= sh_reg(N-2 downto 0);          -- shift inner bits

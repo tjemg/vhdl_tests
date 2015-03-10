@@ -80,7 +80,7 @@ ARCHITECTURE behavior OF spi_loopback_test IS
 		m_wren_o : OUT std_logic;
 		m_wren_ack_o : OUT std_logic;
 		m_rx_bit_reg_o : OUT std_logic;
-		m_state_dbg_o : OUT std_logic_vector(5 downto 0);
+		m_state_dbg_o : OUT std_logic_vector(3 downto 0);
 		m_core_clk_o : OUT std_logic;
 		m_core_n_clk_o : OUT std_logic;
 		m_sh_reg_dbg_o : OUT std_logic_vector(31 downto 0);
@@ -92,7 +92,7 @@ ARCHITECTURE behavior OF spi_loopback_test IS
 		s_wren_o : OUT std_logic;
 		s_wren_ack_o : OUT std_logic;
 		s_rx_bit_reg_o : OUT std_logic;
-		s_state_dbg_o : OUT std_logic_vector(5 downto 0)
+		s_state_dbg_o : OUT std_logic_vector(3 downto 0)
 		);
 	END COMPONENT;
 
@@ -128,7 +128,7 @@ ARCHITECTURE behavior OF spi_loopback_test IS
     signal wren_o_m : std_logic := 'U';
     signal wren_ack_o_m : std_logic := 'U';
     signal rx_bit_reg_m : std_logic;
-    signal state_m : std_logic_vector (5 downto 0);
+    signal state_m : std_logic_vector (3 downto 0);
     signal core_clk_o_m : std_logic;
     signal core_n_clk_o_m : std_logic;
     signal sh_reg_m : std_logic_vector (N-1 downto 0) := (others => '0');
@@ -142,7 +142,7 @@ ARCHITECTURE behavior OF spi_loopback_test IS
     signal wren_o_s : std_logic := 'U';
     signal wren_ack_o_s : std_logic := 'U';
     signal rx_bit_reg_s : std_logic;
-    signal state_s : std_logic_vector (5 downto 0);
+    signal state_s : std_logic_vector (3 downto 0);
 --    signal sh_reg_s : std_logic_vector (N-1 downto 0);
 
     --=========================================================
