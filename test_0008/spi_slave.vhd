@@ -369,7 +369,7 @@ begin
                 sh_next(0) <= rx_bit_next;                              -- shift in rx bit into LSb
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (_N-1) downto (_PREFETCH+3) =>                           -- remove 'do_transfer' and shift bits
+            when (_N-1) downto (_PREFETCH+3) =>                         -- remove 'do_transfer' and shift bits
                 do_transfer_next <= '0';                                -- reset 'do_valid' transfer signal
                 di_req_next <= '0';                                     -- prefetch data request: deassert when shifting data
                 wr_ack_next <= '0';                                     -- remove data load ack for all but the load stages
@@ -378,8 +378,7 @@ begin
                 sh_next(0) <= rx_bit_next;                              -- shift in rx bit into LSb
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (_PREFETCH+2)
-	         downto 3 =>                                            -- raise prefetch 'di_req_o' signal
+            when (_PREFETCH+2) downto 3 =>                              -- raise prefetch 'di_req_o' signal
                 di_req_next <= '1';                                     -- request data in advance to allow for pipeline delays
                 wr_ack_next <= '0';                                     -- remove data load ack for all but the load stages
                 tx_bit_next <= sh_reg(N-1);                             -- output next MSbit

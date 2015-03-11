@@ -26,7 +26,7 @@ all: $(OBJECTS)
 	vpp $< $@
 
 run:
-	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1000ms
+	ghdl -r $(TARGET) --wave=test.ghw --stop-time=100us
 
 show:
 	gtkwave test.ghw

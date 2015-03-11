@@ -521,7 +521,7 @@ begin
                 wr_ack_next <= '0';                                     -- remove write acknowledge for all but the load stages
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (_N-1) downto (_PREFETCH+3) =>                           -- remove 'do_transfer' and shift bits
+            when (_N-1) downto (_PREFETCH+3) =>                         -- remove 'do_transfer' and shift bits
                 spi_mosi_o <= sh_reg(N-1);                              -- shift out tx bit from the MSb
                 di_req_next <= '0';                                     -- prefetch data request: deassert when shifting data
                 do_transfer_next <= '0';                                -- reset 'do_valid' transfer signal
@@ -530,8 +530,7 @@ begin
                 wr_ack_next <= '0';                                     -- remove write acknowledge for all but the load stages
                 state_next <= state_reg - 1;                            -- update next state at each sck pulse
                 
-            when (_PREFETCH+2)
-	    downto 2 =>                               -- raise prefetch 'di_req_o' signal
+            when (_PREFETCH+2) downto 2 =>                              -- raise prefetch 'di_req_o' signal
                 spi_mosi_o <= sh_reg(N-1);                              -- shift out tx bit from the MSb
                 di_req_next <= '1';                                     -- request data in advance to allow for pipeline delays
                 sh_next(N-1 downto 1) <= sh_reg(N-2 downto 0);          -- shift inner bits
