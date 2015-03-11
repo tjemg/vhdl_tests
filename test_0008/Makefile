@@ -2,9 +2,8 @@ FLAGS   = --ieee=synopsys
 TARGET  = spi_loopback_test
 DEVICE  = xc2s300e-6-pq208
 PREVHDL = spi_master._vhdl       \
-	  spi_slave._vhdl
-SOURCES = grp_debouncer.vhd      \
-          spi_master._vhdl       \
+	      spi_slave._vhdl
+SOURCES = spi_master._vhdl       \
           spi_slave._vhdl        \
           spi_loopback.vhd       \
           spi_loopback_test.vhd
