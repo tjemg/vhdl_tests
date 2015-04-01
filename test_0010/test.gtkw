@@ -1,0 +1,47 @@
+[*]
+[*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
+[*] Wed Apr  1 22:27:03 2015
+[*]
+[dumpfile] "/home/gasiba/Tests/test_0010/test.ghw"
+[dumpfile_mtime] "Wed Apr  1 22:26:40 2015"
+[dumpfile_size] 12069
+[savefile] "/home/gasiba/Tests/test_0010/test.gtkw"
+[timestart] 0
+[size] 1366 715
+[pos] -1 -1
+*-29.204330 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.sim_fpga_top.
+[treeopen] top.sim_fpga_top.top_fpga.
+[sst_width] 210
+[signals_width] 134
+[sst_expanded] 1
+[sst_vpaned_height] 195
+@28
+top.sim_fpga_top.clk
+top.sim_fpga_top.areset
+@22
+#{top.sim_fpga_top.top_fpga.mem_addr[7:0]} top.sim_fpga_top.top_fpga.mem_addr[7] top.sim_fpga_top.top_fpga.mem_addr[6] top.sim_fpga_top.top_fpga.mem_addr[5] top.sim_fpga_top.top_fpga.mem_addr[4] top.sim_fpga_top.top_fpga.mem_addr[3] top.sim_fpga_top.top_fpga.mem_addr[2] top.sim_fpga_top.top_fpga.mem_addr[1] top.sim_fpga_top.top_fpga.mem_addr[0]
+@8420
+#{top.sim_fpga_top.data[15:0]} top.sim_fpga_top.data[15] top.sim_fpga_top.data[14] top.sim_fpga_top.data[13] top.sim_fpga_top.data[12] top.sim_fpga_top.data[11] top.sim_fpga_top.data[10] top.sim_fpga_top.data[9] top.sim_fpga_top.data[8] top.sim_fpga_top.data[7] top.sim_fpga_top.data[6] top.sim_fpga_top.data[5] top.sim_fpga_top.data[4] top.sim_fpga_top.data[3] top.sim_fpga_top.data[2] top.sim_fpga_top.data[1] top.sim_fpga_top.data[0]
+@20000
+-
+-
+-
+-
+-
+-
+-
+-
+@20001
+-
+@20000
+-
+-
+-
+-
+-
+-
+-
+[pattern_trace] 1
+[pattern_trace] 0
