@@ -36,6 +36,7 @@ show:
 clean:
 	rm -rf *.o
 	rm -rf *~
+	rm -rf _impact*
 	rm -rf *.cf
 	rm -rf *.ghw
 	rm -rf *.bit
