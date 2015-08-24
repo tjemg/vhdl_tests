@@ -23,4 +23,5 @@ test_0009:      ?      ?     -   OpenCore GRP Debouncer
 test_0010:      Y      ?     -   RAM with loaded SIN function
 test_0011:      Y      Y     Y   Test Inferred RAM initialization in FPGA
 test_0012:      Y      Y     Y   Blinky 2 with clock divider (test PulseView)
+test_0013:      Y      Y     Y   ZPU + Sinus Generator
 ```
