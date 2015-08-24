@@ -1,0 +1,8 @@
+# Pin Assignments
+NET "CLK"       LOC = "p77"  ;
+NET "LED"       LOC = "p82"  ;
+NET "CLK_OUT_1" LOC = "p94"  ;
+NET "CLK_OUT_2" LOC = "p95"  ;
+NET "CLK_OUT_3" LOC = "p96"  ;
+NET "CLK_OUT_4" LOC = "p97"  ;
+

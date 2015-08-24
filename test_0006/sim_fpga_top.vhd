@@ -46,7 +46,7 @@ end sim_fpga_top;
 
 architecture behave of sim_fpga_top is
     signal clk             : std_logic;
-    signal areset          : std_logic := '1';
+    signal areset          : std_logic := '0';
     signal IO_Port0        : std_logic_vector(wordSize-1 downto 0);
 
   component fpga_top is
@@ -71,7 +71,7 @@ begin
         wait for 5 ns;
         clk <= '1';
         wait for 5 ns;
-        areset <= '0';
+        areset <= '1';
     end process clock;
 
 end architecture behave;

@@ -1,0 +1,23 @@
+# Pin Assignments
+NET "CLK"      LOC = "p77"  ;
+NET "aRESET"   LOC = "p57"  ;
+
+NET "data<0>"  LOC = "p55"  ;
+NET "data<1>"  LOC = "p56"  ;
+NET "data<2>"  LOC = "p58"  ;
+NET "data<3>"  LOC = "p59"  ;
+NET "data<4>"  LOC = "p60"  ;
+NET "data<5>"  LOC = "p61"  ;
+NET "data<6>"  LOC = "p62"  ;
+NET "data<7>"  LOC = "p63"  ;
+
+NET "memAddr<0>"  LOC = "p64"  ;
+NET "memAddr<1>"  LOC = "p68"  ;
+NET "memAddr<2>"  LOC = "p69"  ;
+NET "memAddr<3>"  LOC = "p70"  ;
+NET "memAddr<4>"  LOC = "p71"  ;
+NET "memAddr<5>"  LOC = "p73"  ;
+NET "memAddr<6>"  LOC = "p74"  ;
+
+NET "memRD"  LOC = "p100"  ;
+

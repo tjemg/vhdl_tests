@@ -164,6 +164,11 @@ _start:
 		jmp _premain
 
 
+	.balign 16,0
+# offset 0x0000 0030
+		.globl _memreg
+		.weak _memreg
+_memreg:	
 
 /* instruction emulation code */
 

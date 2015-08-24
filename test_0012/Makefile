@@ -1,40 +1,19 @@
-ZPUCCDIR = /opt/zpugcc
-ZPUCORE  = zpu_core.vhd
-FLAGS    = --ieee=synopsys
-TARGET   = sim_fpga_top
-DEVICE   = xc2s300e-6-pq208
-SOURCES  = zpu_config.vhd     \
-           zpupkg.vhd         \
-           txt_util.vhd       \
-           $(ZPUCORE)         \
-           trace.vhd          \
-           fpga_top.vhd       \
-           sim_fpga_top.vhd
-OBJECTS  = $(subst .vhd,.o,$(SOURCES))
-MAIN     = main
+FLAGS   = --ieee=synopsys
+TARGET  = sim_fpga_top
+DEVICE  = xc2s300e-6-pq208
+SOURCES = blink.vhd        \
+          sim_fpga_top.vhd
+OBJECTS = $(subst .vhd,.o,$(SOURCES))
+MAIN    = main
 
-all: $(OBJECTS) prog_ram.o
+all: $(OBJECTS)
 	ghdl -e $(FLAGS) $(TARGET)
-
-ram: zpuramgen
-	$(ZPUCCDIR)/bin/zpu-elf-gcc -o $(MAIN).elf crt0_phi.S $(MAIN).c -phi -Wl,--gc-sections -Os -abel -Wl,--relax -nostdlib
-	$(ZPUCCDIR)/bin/zpu-elf-objdump --disassemble-all $(MAIN).elf > $(MAIN).dis
-	$(ZPUCCDIR)/bin/zpu-elf-objcopy -O binary $(MAIN).elf $(MAIN).bin
-	./zpuramgen $(MAIN).bin > prog_ram.vhd
-	chmod -x $(MAIN).bin
-	chmod -x $(MAIN).elf
-
-zpuramgen:
-	gcc -o zpuramgen zpuramgen.c
 
 %.o: %.vhd
 	ghdl -a $(FLAGS) $<
 
-prog_ram.o: ram
-	ghdl -a $(FLAGS) prog_ram.vhd
-
 run:
-	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
+	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1000ms
 
 bit:
 	rm -rf build
@@ -52,11 +31,12 @@ bit:
 	cp build/*.bit .
 
 show:
-	gtkwave test.gtkw
+	gtkwave test.ghw
 
 clean:
 	rm -rf *.o
 	rm -rf *~
+	rm -rf _impact*
 	rm -rf *.cf
 	rm -rf *.ghw
 	rm -rf *.bit

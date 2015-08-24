@@ -1,0 +1,3 @@
+vhdl work "../driver.vhd"
+vhdl work "../fpga_top.vhd"
+vhdl work "../prog_ram.vhd"

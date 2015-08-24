@@ -1,26 +1,27 @@
-ZPUCORE = zpu_core.vhd
-FLAGS   = --ieee=synopsys
-TARGET  = fpga_top
-DEVICE  = xc2s300e-6-pq208
-SOURCES = zpu_config_trace.vhd            \
-          zpupkg.vhd                      \
-          txt_util.vhd                    \
-          sim_fpga_top.vhd                \
-          $(ZPUCORE)                      \
-	  prog_ram.vhd                    \
-          timer.vhd                       \
-          io.vhd                          \
+ZPUCCDIR = /opt/zpugcc
+ZPUCORE  = zpu_core.vhd
+FLAGS    = --ieee=synopsys
+TARGET   = fpga_top
+DEVICE   = xc2s300e-6-pq208
+SOURCES  = zpu_config_trace.vhd            \
+           zpupkg.vhd                      \
+           txt_util.vhd                    \
+           sim_fpga_top.vhd                \
+           $(ZPUCORE)                      \
+	   prog_ram.vhd                    \
+           timer.vhd                       \
+           io.vhd                          \
           trace.vhd
-OBJECTS = $(subst .vhd,.o,$(SOURCES))
+OBJECTS  = $(subst .vhd,.o,$(SOURCES))
 
 all: ram $(OBJECTS)
 	ghdl -e $(FLAGS) $(TARGET)
 
 ram: zpuramgen
-	/opt/ZPU/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -O3 -Wl,--relax
-	#/opt/ZPU/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -Os -abel -Wl,--relax  # DOES NOT WORK!
-	/opt/ZPU/bin/zpu-elf-objdump --disassemble-all hello.elf > hello.dis
-	/opt/ZPU/bin/zpu-elf-objcopy -O binary hello.elf hello.bin
+	$(ZPUCCDIR)/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -O3 -Wl,--relax
+	#$(ZPUCCDIR)/bin/zpu-elf-gcc -o hello.elf hello.c -phi -Wl,--gc-sections -Os -abel -Wl,--relax  # DOES NOT WORK!
+	$(ZPUCCDIR)/bin/zpu-elf-objdump --disassemble-all hello.elf > hello.dis
+	$(ZPUCCDIR)/bin/zpu-elf-objcopy -O binary hello.elf hello.bin
 	./zpuramgen hello.bin > prog_ram.vhd
 	chmod -x hello.bin
 	chmod -x hello.elf

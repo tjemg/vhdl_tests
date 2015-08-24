@@ -29,15 +29,17 @@ architecture behave of fpga_top is
     signal io_writeEn      : std_logic;
     signal break           : std_logic;
     signal IO_port_0       : std_logic_vector(wordSize-1 downto 0);
+    signal resetIn         : std_logic;
 
 begin
 
-    IO_Port0 <= IO_port_0;
+  IO_Port0 <= IO_port_0;
+  resetIn  <= not reset;
 
     zpu: zpu_core
     port map (
         clk                 => clk,
-        reset               => reset,
+        reset               => resetIn,
         enable              => enable,
         in_mem_busy         => dram_mem_busy,
         mem_read            => mem_read,
@@ -53,7 +55,7 @@ begin
     dram4K: dram
     port map (
         clk             => clk ,
-        areset          => reset,
+        areset          => resetIn,
         mem_busy        => dram_mem_busy,
         mem_read        => dram_mem_read,
         mem_write       => mem_write,
@@ -88,9 +90,9 @@ begin
     io_writeEn   <= mem_writeEnable and     mem_addr(maxAddrBitIncIO);
     dram_writeEn <= mem_writeEnable and not mem_addr(maxAddrBitIncIO);
 
-    memoryControlSync: process(clk, reset)
+    memoryControlSync: process(clk, resetIn)
     begin
-        if reset = '1' then
+        if resetIn = '1' then
             enable       <= '0';
             dram_ready   <= '0';
         elsif rising_edge(clk) then

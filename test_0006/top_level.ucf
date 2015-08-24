@@ -1,19 +1,19 @@
 # Pin Assignments
 NET "CLK"      LOC = "p77"  ;
-NET "RESET"    LOC = "p102"  ;
+NET "RESET"    LOC = "p57"  ;
 
 NET "IO_Port0<0>"  LOC = "p55"  ;
 NET "IO_Port0<1>"  LOC = "p56"  ;
-NET "IO_Port0<2>"  LOC = "p57"  ;
-NET "IO_Port0<3>"  LOC = "p58"  ;
-NET "IO_Port0<4>"  LOC = "p59"  ;
-NET "IO_Port0<5>"  LOC = "p60"  ;
-NET "IO_Port0<6>"  LOC = "p61"  ;
-NET "IO_Port0<7>"  LOC = "p62"  ;
+NET "IO_Port0<2>"  LOC = "p58"  ;
+NET "IO_Port0<3>"  LOC = "p59"  ;
+NET "IO_Port0<4>"  LOC = "p60"  ;
+NET "IO_Port0<5>"  LOC = "p61"  ;
+NET "IO_Port0<6>"  LOC = "p62"  ;
+NET "IO_Port0<7>"  LOC = "p63"  ;
+NET "IO_Port0<8>"  LOC = "p64"  ;
 
-NET "IO_Port0<8>"  LOC = "p63"  ;
-NET "IO_Port0<9>"  LOC = "p64"  ;
-NET "IO_Port0<10>" LOC = "p71"  ;
+NET "IO_Port0<9>"  LOC = "p71"  ;
+NET "IO_Port0<10>" LOC = "p102"  ;
 NET "IO_Port0<11>" LOC = "p100"  ;
 NET "IO_Port0<12>" LOC = "p73"  ;
 NET "IO_Port0<13>" LOC = "p68"  ;
