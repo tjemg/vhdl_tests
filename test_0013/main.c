@@ -32,22 +32,23 @@ void _premain(void) {
     int           tmp;
     int           Sin;
     
-    const int qN = 13;
-    const int qA = 12;
-    const int qP = 15;
-    const int qR = 2*qN-qP;
-    const int qS = qN+qP+1-qA;
+    //const int qN = 13;
+    //const int qA = 12;
+    //const int qP = 15;
+    //const int qR = 2*qN-qP;
+    //const int qS = qN+qP+1-qA;
 
     while (1) {
-        tmp = i<<(30-qN);          // shift to full s32 range (Q13->Q30)
-        if ( (tmp^(tmp<<1)) < 0) {
-          // test for quadrant 1 or 2
-          tmp= (1<<31) - tmp;
-        }
-        tmp = tmp>>(30-qN);
-        Sin = tmp * ( (3<<qP) - (tmp*tmp>>qR) ) >> qS;
+      //tmp = i<<(30-qN);          // shift to full s32 range (Q13->Q30)
+      //if ( (tmp^(tmp<<1)) < 0) {
+      //  // test for quadrant 1 or 2
+      //  tmp= (1<<31) - tmp;
+      //}
+      //tmp = tmp>>(30-qN);
+      //Sin = tmp * ( (3<<qP) - (tmp*tmp>>qR) ) >> qS;
 
-        *pnt = Sin;
+        //*pnt = Sin;
+        *pnt = isin_S3(i);
 	i   += 0x00000006;
     }
 }

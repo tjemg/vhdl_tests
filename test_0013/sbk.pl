@@ -11,7 +11,9 @@
  
 use Data::Dumper;
 
-my %convUnits    = ( MHz => 1.0e6 );
+my %convUnits    = ( MHz => 1.0e6,
+                     kHz => 1.0e3,
+                      Hz => 1.0   );
 my %channelValue = ();
 my %indexToLabel = ();
 my %labelToIndex = ();
