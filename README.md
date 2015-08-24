@@ -19,4 +19,8 @@ test_0005:      Y      N     ?   ZPU test project
 test_0006:      Y      Y     ?   ZPU project (synthetizable, low memory size 2Kx32bit)
 test_0007:      Y      Y     Y   Blink LED for BurchED FPGA board
 test_0008:      N      ?     -   OpenCore SPI Master/Slave
+test_0009:      ?      ?     -   OpenCore GRP Debouncer
+test_0010:      Y      ?     -   RAM with loaded SIN function
+test_0011:      Y      Y     Y   Test Inferred RAM initialization in FPGA
+test_0012:      Y      Y     Y   Blinky 2 with clock divider (test PulseView)
 ```
