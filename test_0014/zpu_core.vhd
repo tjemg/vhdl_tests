@@ -148,6 +148,7 @@ architecture behave of zpu_core is
   signal insn                : InsnType;
   signal decodedOpcode       : InsnArray;
   signal opcode              : OpcodeArray;
+  signal bytesBitsCnt        : integer;
 
 -- Begin ZPU state machine.
 begin
@@ -160,6 +161,7 @@ begin
   incSp                                           <= sp + 1;
   incIncSp                                        <= sp + 2;
   decSp                                           <= sp - 1;
+  bytesBitsCnt                                    <= to_integer(pc(byteBits-1 downto 0)); -- the lower part of the PC which acts as a counter for the instruction decoder
 
   opcodeControl : process(clk, reset)
       variable tOpcode         : std_logic_vector(OpCode_Size-1 downto 0);
@@ -169,23 +171,21 @@ begin
       variable tNextInsn       : InsnType;
       variable tDecodedOpcode  : InsnArray;
       variable tMultResult     : unsigned(wordSize*2-1 downto 0);
-      variable bytesBitsCnt    : integer;
   begin
-      bytesBitsCnt := to_integer(pc(byteBits-1 downto 0));
 
       if reset = '1' then
            -- Asynchronous reset
-          state           <= State_Idle;
-          break           <= '0';                                                  --
+          state           <= State_Idle;                                           -- initial state is Idle
+          break           <= '0';                                                  -- reset break signal
           sp              <= unsigned(spStart(maxAddrBitIncIO downto minAddrBit)); -- set SP to spStart
-          pc              <= (others => '0');
-          idim_flag       <= '0';
-          inInterrupt     <= '0';
-          mem_writeEnable <= '0';
-          mem_readEnable  <= '0';
-          multA           <= (others => '0');
-          multB           <= (others => '0');
-          mem_writeMask   <= (others => '1');
+          pc              <= (others => '0');                                      -- initialize PC to 0x00000000
+          idim_flag       <= '0';                                                  -- IM instruction not being executed
+          inInterrupt     <= '0';                                                  -- not processing any interrupt
+          mem_writeEnable <= '0';                                                  -- not writing to memory
+          mem_readEnable  <= '0';                                                  -- not reading from memory
+          multA           <= (others => '0');                                      -- multipliaction result = 0
+          multB           <= (others => '0');                                      -- multiplication result = 0
+          mem_writeMask   <= (others => '1');                                      -- initialize writeMask to all 1's
           
       elsif rising_edge(clk) then
           -- NOTE: we must multiply unconditionally to get pipelined multiplication
@@ -202,8 +202,7 @@ begin
           mem_write       <= (others => DontCareValue);
 
           if (mem_writeEnable = '1') and (mem_readEnable = '1') then
-              -- if this condition happens, we halt execution until the
-              -- condition clears...
+              -- if this condition happens, we halt execution until the condition clears...
               report "read/write collision" severity failure;
           else  
 
@@ -252,7 +251,7 @@ begin
                       end if;
 
                   -- Wait until mem_busy is LOW
-                  -- load stackB with mem[SP]
+                  -- load stackB with mem[SP+1]
                   -- fetch PC
                   -- next state: DECODE
                   when State_Resync3 =>
@@ -444,8 +443,8 @@ begin
                   --   2. decodedOpcode : the decoded instruction pipe (due to reading 32bit words,
                   --                      but instruction is 8bit)
                   --   3  opcode        : array with opcodes length = nBits/8 (for 32bit = 4)
-                  --   4. stackA        : stack variable A (TOS)
-                  --   5. stackB        : stack variable B
+                  --   4. stackA        : stack variable A (TOS)  = mem[SP]
+                  --   5. stackB        : stack variable B        = mem[SP+1]
                   --------------------------------------------------------------------------------------
                   when State_Execute =>
                       insn <= decodedOpcode(to_integer(nextPC(byteBits-1 downto 0)));
@@ -467,24 +466,24 @@ begin
                               --
                               --       b) interrupts are disabled during IM instruction
                               if in_mem_busy = '0' then
-                                  idim_flag  <= '1';
-                                  pc         <= pc + 1;
+                                  idim_flag  <= '1';    -- signal execution of IM instruction
+                                  pc         <= pc + 1; -- decode next intruction
 
-                                  if idim_flag = '1' then
+                                  if idim_flag = '1' then -- previously executed IM?
                                       -- continue loading stackA from a previous IM instruction
                                       stackA(wordSize-1 downto 7) <= stackA(wordSize-8 downto 0);
                                       stackA(6 downto 0)          <= unsigned(opcode(bytesBitsCnt)(6 downto 0));
                                   else
                                       -- start loading process
-                                      mem_writeEnable <= '1';
-                                      mem_addr        <= std_logic_vector(incSp);
-                                      mem_write       <= std_logic_vector(stackB);
-                                      stackB          <= stackA;
-                                      sp              <= decSp;
-                                      for i in wordSize-1 downto 7 loop -- perform sign extension
+                                      mem_writeEnable <= '1';                       -- we wish to write
+                                      mem_addr        <= std_logic_vector(incSp);   -- to memory addr = SP+1
+                                      mem_write       <= std_logic_vector(stackB);  -- the value of stackB
+                                      stackB          <= stackA;                    -- new stackB is same as current stackA
+                                      sp              <= decSp;                     -- decrement SP (because we push to stack)
+                                      for i in wordSize-1 downto 7 loop             -- perform sign extension on stackA
                                           stackA(i) <= opcode(bytesBitsCnt)(6);
                                       end loop;
-                                      stackA(6 downto 0) <= unsigned(opcode(bytesBitsCnt)(6 downto 0));
+                                      stackA(6 downto 0) <= unsigned(opcode(bytesBitsCnt)(6 downto 0)); -- load lower bits of stackA with x
                                   end if; -- idim_flag
                               end if; -- in_mem_busy
 
@@ -494,12 +493,12 @@ begin
                               -- set idim_flag to '0'
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
-                                  state           <= State_StoreSP2;
-                                  mem_writeEnable <= '1';
-                                  mem_addr        <= std_logic_vector(sp+spOffset);
-                                  mem_write       <= std_logic_vector(stackA);
-                                  stackA          <= stackB;
-                                  sp              <= incSp;
+                                  state           <= State_StoreSP2;                -- StoreSP2 required to load stackB in Popped
+                                  mem_writeEnable <= '1';                           -- we wish to write
+                                  mem_addr        <= std_logic_vector(sp+spOffset); -- write to address: SP+offset
+                                  mem_write       <= std_logic_vector(stackA);      -- value in stackA (TOS)
+                                  stackA          <= stackB;                        -- preload stackA with next value in stack
+                                  sp              <= incSp;                         -- increment SP
                               end if;
 
                             
@@ -894,11 +893,11 @@ begin
                   -- STATE: STORESP2
                   --------------------------------------------------------------------------------------
                   when State_StoreSP2 =>
-                    if in_mem_busy = '0' then
-                      mem_addr       <= std_logic_vector(incSp);
-                      mem_readEnable <= '1';
-                      state          <= State_Popped;
-                    end if;
+                      if in_mem_busy = '0' then
+                         mem_addr       <= std_logic_vector(incSp);
+                         mem_readEnable <= '1';
+                         state          <= State_Popped;
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LOADSP2
@@ -1012,13 +1011,16 @@ begin
 
                   --------------------------------------------------------------------------------------
                   -- STATE: POPPED
+                  -- this state reloads the stackB variable since the SP has changed
+                  -- Note: stackA must be loaded previously, since after Popped, the next
+                  --       state is always Execute, and stackA and stackB must be set to proper values
                   --------------------------------------------------------------------------------------
                   when State_Popped =>
-                    if in_mem_busy = '0' then
-                      pc     <= pc + 1;
-                      stackB <= unsigned(mem_read);
-                      state  <= State_Execute;
-                    end if;
+                     if in_mem_busy = '0' then
+                        pc     <= pc + 1;
+                        stackB <= unsigned(mem_read);
+                        state  <= State_Execute;
+                     end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: SHIFTLEFT2
