@@ -122,7 +122,8 @@ architecture behave of zpu_core is
   signal incSp               : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer + 1
   signal incIncSp            : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer + 2
   signal decSp               : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer - 1
-  signal stackA              : unsigned(wordSize-1 downto 0);
+  signal stackA              : unsigned(wordSize-1 downto 0);                -- cached version of mem[SP]
+  signal stackB              : unsigned(wordSize-1 downto 0);                -- cached version of mem[SP+1]
   signal binaryOpResult      : unsigned(wordSize-1 downto 0);
   signal binaryOpResult2     : unsigned(wordSize-1 downto 0);
   signal multResult2         : unsigned(wordSize-1 downto 0);
@@ -134,7 +135,6 @@ architecture behave of zpu_core is
   signal shiftB              : unsigned(wordSize-1 downto 0);
   signal shiftA_Next         : unsigned(wordSize-1 downto 0);
   signal shiftB_Next         : unsigned(wordSize-1 downto 0);
-  signal stackB              : unsigned(wordSize-1 downto 0);
   signal idim_flag           : std_logic;
   signal busy                : std_logic;
   signal mem_writeEnable     : std_logic;
@@ -475,10 +475,10 @@ begin
                                       stackA(6 downto 0)          <= unsigned(opcode(bytesBitsCnt)(6 downto 0));
                                   else
                                       -- start loading process
-                                      mem_writeEnable <= '1';                       -- we wish to write
+                                      mem_writeEnable <= '1';                       -- we wish to write cached stackB
                                       mem_addr        <= std_logic_vector(incSp);   -- to memory addr = SP+1
-                                      mem_write       <= std_logic_vector(stackB);  -- the value of stackB
-                                      stackB          <= stackA;                    -- new stackB is same as current stackA
+                                      mem_write       <= std_logic_vector(stackB);  -- save cached stackB value
+                                      stackB          <= stackA;                    -- new stackB is now stackA
                                       sp              <= decSp;                     -- decrement SP (because we push to stack)
                                       for i in wordSize-1 downto 7 loop             -- perform sign extension on stackA
                                           stackA(i) <= opcode(bytesBitsCnt)(6);
@@ -497,7 +497,7 @@ begin
                                   mem_writeEnable <= '1';                           -- we wish to write
                                   mem_addr        <= std_logic_vector(sp+spOffset); -- write to address: SP+offset
                                   mem_write       <= std_logic_vector(stackA);      -- value in stackA (TOS)
-                                  stackA          <= stackB;                        -- preload stackA with next value in stack
+                                  stackA          <= stackB;                        -- new stackA = old stackB
                                   sp              <= incSp;                         -- increment SP
                               end if;
 
@@ -507,42 +507,47 @@ begin
                               -- MACHINE CODE: 011xxxxx
                               -- set idim_flag to '0'
                               if in_mem_busy = '0' then
-                                 idim_flag       <= '0';
-                                 state           <= State_LoadSP2;
-                                 sp              <= decSp;
-                                 mem_writeEnable <= '1';
-                                 mem_addr        <= std_logic_vector(incSp);
-                                 mem_write       <= std_logic_vector(stackB);
+                                  idim_flag       <= '0';
+                                  state           <= State_LoadSP2;
+                                  sp              <= decSp;                        -- decrement SP (required by push)
+                                  mem_writeEnable <= '1';                          -- we wish to writeback cached value
+                                  mem_addr        <= std_logic_vector(incSp);      -- memory position mem[SP+1]
+                                  mem_write       <= std_logic_vector(stackB);     -- save stackB @ mem[SP+1]
                               end if;
 
                           when Insn_Emulate =>
-                            if in_mem_busy = '0' then
-                              idim_flag                        <= '0';
-                              sp                               <= decSp;
-                              mem_writeEnable                  <= '1';
-                              mem_addr                         <= std_logic_vector(incSp);
-                              mem_write                        <= std_logic_vector(stackB);
-                              stackA                           <= (others => DontCareValue);
-                              stackA(maxAddrBitIncIO downto 0) <= pc + 1;
-                              stackB                           <= stackA;
+                              --       OPCODE: EMULATE x
+                              -- MACHINE CODE: 001xxxxx
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag                        <= '0';
+                                  sp                               <= decSp;                     -- decrement SP 
+                                  mem_writeEnable                  <= '1';                       -- we wish to writeback cached value
+                                  mem_addr                         <= std_logic_vector(incSp);   -- memory position mem[SP+1]
+                                  mem_write                        <= std_logic_vector(stackB);  -- save stackB @ mem[SP+1]
+                                  stackA                           <= (others => DontCareValue); -- make sure higher-bit values are set to zero
+                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;                    -- stackA = return address
+                                  stackB                           <= stackA;
 
-                              -- The emulate address is:
-                              --        98 7654 3210
-                              -- 0000 00aa aaa0 0000
-                              pc             <= (others => '0');
-                              pc(9 downto 5) <= unsigned(opcode(bytesBitsCnt)(4 downto 0));
-                              state          <= State_Fetch;
-                            end if; -- in_mem_busy
+                                  -- The emulate address is:
+                                  --        98 7654 3210
+                                  -- 0000 00aa aaa0 0000
+                                  pc             <= (others => '0');                             -- make sure higher order bits = '0'
+                                  pc(9 downto 5) <= unsigned(opcode(bytesBitsCnt)(4 downto 0));  -- pc = 32*x
+                                  state          <= State_Fetch;
+                              end if; -- in_mem_busy
 
                           when Insn_CallPCrel =>
-                            if in_mem_busy = '0' then
-                              idim_flag                        <= '0';
-                              stackA                           <= (others => DontCareValue);
-                              stackA(maxAddrBitIncIO downto 0) <= pc + 1;
-
-                              pc    <= pc + stackA(maxAddrBitIncIO downto 0);
-                              state <= State_Fetch;
-                            end if;
+                              --       OPCODE: CALLPCREL
+                              -- MACHINE CODE: 00111110
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag                        <= '0';
+                                  stackA                           <= (others => DontCareValue);
+                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;
+                                  pc                               <= pc + stackA(maxAddrBitIncIO downto 0);
+                                  state                            <= State_Fetch;
+                              end if;
 
                           when Insn_Call =>
                             if in_mem_busy = '0' then
@@ -894,31 +899,31 @@ begin
                   --------------------------------------------------------------------------------------
                   when State_StoreSP2 =>
                       if in_mem_busy = '0' then
-                         mem_addr       <= std_logic_vector(incSp);
-                         mem_readEnable <= '1';
-                         state          <= State_Popped;
+                          mem_addr       <= std_logic_vector(incSp);         -- mem[SP+1]
+                          mem_readEnable <= '1';                             -- we wish to read
+                          state          <= State_Popped;                    -- this state will load stackB
                       end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LOADSP2
                   --------------------------------------------------------------------------------------
                   when State_LoadSP2 =>
-                    if in_mem_busy = '0' then
-                      state          <= State_LoadSP3;
-                      mem_readEnable <= '1';
-                      mem_addr       <= std_logic_vector(sp+spOffset+1);
-                    end if;
+                      if in_mem_busy = '0' then
+                          state          <= State_LoadSP3;
+                          mem_readEnable <= '1';                             -- we wish to read
+                          mem_addr       <= std_logic_vector(sp+spOffset+1); -- fetch value at mem[SP+offset]
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LOADSP3
                   --------------------------------------------------------------------------------------
                   when State_LoadSP3 =>
-                    if in_mem_busy = '0' then
-                      pc     <= pc + 1;
-                      state  <= State_Execute;
-                      stackB <= stackA;
-                      stackA <= unsigned(mem_read);
-                    end if;
+                      if in_mem_busy = '0' then
+                          pc     <= pc + 1;                                  -- increment program counter
+                          state  <= State_Execute;                           -- execute next instr.
+                          stackB <= stackA;                                  -- stackB = old stackA
+                          stackA <= unsigned(mem_read);                      -- stackA = fetched value
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: ADDSP2
