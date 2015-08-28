@@ -550,22 +550,27 @@ begin
                               end if;
 
                           when Insn_Call =>
-                            if in_mem_busy = '0' then
-                              idim_flag                        <= '0';
-                              stackA                           <= (others => DontCareValue);
-                              stackA(maxAddrBitIncIO downto 0) <= pc + 1;
-                              pc                               <= stackA(maxAddrBitIncIO downto 0);
-                              state                            <= State_Fetch;
-                            end if;
+                              --       OPCODE: CALL
+                              -- MACHINE CODE: 00111110
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag                        <= '0';
+                                  stackA                           <= (others => DontCareValue);
+                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;
+                                  pc                               <= stackA(maxAddrBitIncIO downto 0);
+                                  state                            <= State_Fetch;
+                              end if;
 
                           when Insn_AddSP =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              state      <= State_AddSP2;
-
-                              mem_readEnable <= '1';
-                              mem_addr       <= std_logic_vector(sp+spOffset);
-                            end if;
+                              --       OPCODE: ADDSP
+                              -- MACHINE CODE: 00111110
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag                        <= '0';
+                                  state                            <= State_AddSP2;
+                                  mem_readEnable                   <= '1';
+                                  mem_addr                         <= std_logic_vector(sp+spOffset);
+                              end if;
 
                           when Insn_PushSP =>
                             if in_mem_busy = '0' then
@@ -929,11 +934,11 @@ begin
                   -- STATE: ADDSP2
                   --------------------------------------------------------------------------------------
                   when State_AddSP2 =>
-                    if in_mem_busy = '0' then
-                      pc     <= pc + 1;
-                      state  <= State_Execute;
-                      stackA <= stackA + unsigned(mem_read);
-                    end if;
+                      if in_mem_busy = '0' then
+                          pc     <= pc + 1;
+                          state  <= State_Execute;
+                          stackA <= stackA + unsigned(mem_read);
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LOAD2
