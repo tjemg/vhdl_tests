@@ -587,8 +587,8 @@ begin
                               end if;
 
                           when Insn_PopPC =>
-                              --       OPCODE: POPPC
-                              -- MACHINE CODE: 00000100
+                              --       OPCODE: POP
+                              -- MACHINE CODE: 01010000
                               -- set idim_flag to '0'
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
@@ -615,53 +615,73 @@ begin
                               end if;
 
                           when Insn_AShiftLeft =>
-                            idim_flag  <= '0';
-
-                            shiftA <= stackA;
-                            shiftB <= stackB;
-                            state  <= State_AShiftLeft2;
+                              --       OPCODE: ASHIFTLEFT
+                              -- MACHINE CODE: 00101011
+                              -- set idim_flag to '0'
+                              -- TODO: optimize this state? We are at state
+                              --       Execute, but can already do more stuff than 'nothing'...
+                              idim_flag  <= '0';
+                              shiftA     <= stackA;              -- load old stackA into stackA
+                              shiftB     <= stackB;              -- load old stackB into stackB
+                              state      <= State_AShiftLeft2;   -- go to state AshiftLeft2
 
                           when Insn_AShiftRight =>
-                            idim_flag  <= '0';
-
-                            shiftA <= stackA;
-                            shiftB <= stackB;
-                            state  <= State_AShiftRight2;
+                              --       OPCODE: ASHIFTRIGHT
+                              -- MACHINE CODE: 00101100
+                              -- set idim_flag to '0'
+                              -- TODO: optimize this state? We are at state
+                              --       Execute, but can already do more stuff than 'nothing'...
+                              idim_flag  <= '0';
+                              shiftA     <= stackA;              -- load old stackA into stackA
+                              shiftB     <= stackB;              -- load old stackB into stackB
+                              state      <= State_AShiftRight2;  -- go to state AshiftRight2
 
                           when Insn_LShiftRight =>
-                            idim_flag  <= '0';
-
-                            shiftA <= stackA;
-                            shiftB <= stackB;
-                            state  <= State_LShiftRight2;
+                              --       OPCODE: ASHIFTRIGHT
+                              -- MACHINE CODE: 00101010
+                              -- set idim_flag to '0'
+                              -- TODO: optimize this state? We are at state
+                              --       Execute, but can already do more stuff than 'nothing'...
+                              idim_flag  <= '0';
+                              shiftA     <= stackA;              -- load old stackA into stackA
+                              shiftB     <= stackB;              -- load old stackB into stackB
+                              state      <= State_LShiftRight2;  -- go to state LShiftRight2
 
                           when Insn_Add =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              stackA     <= stackA + stackB;
-
-                              mem_readEnable <= '1';
-                              mem_addr       <= std_logic_vector(incIncSp);
-                              sp             <= incSp;
-                              state          <= State_Popped;
-                            end if;
+                              --       OPCODE: ADD
+                              -- MACHINE CODE: 00000101
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  stackA         <= stackA + stackB;            -- new stackA = old stackA + old stackB
+                                  mem_readEnable <= '1';                        -- we wish to read
+                                  mem_addr       <= std_logic_vector(incIncSp); -- at the memory address SP+2
+                                  sp             <= incSp;                      -- increment SP (since we popped two values and 'pushed' another)
+                                  state          <= State_Popped;               -- go to state Popped
+                              end if;
 
                           when Insn_Sub =>
-                            if in_mem_busy = '0' then
-                              idim_flag      <= '0';
-                              binaryOpResult <= stackB - stackA;
-                              state          <= State_BinaryOpResult;
-                            end if;
+                              --       OPCODE: SUB
+                              -- MACHINE CODE: 00110001
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  binaryOpResult <= stackB - stackA;       -- binary result stackB-stackA
+                                  state          <= State_BinaryOpResult;  -- go to BinaryOpResult state
+                              end if;
 
                           when Insn_Pop =>
-                            if in_mem_busy = '0' then
-                              idim_flag      <= '0';
-                              mem_addr       <= std_logic_vector(incIncSp);
-                              mem_readEnable <= '1';
-                              sp             <= incSp;
-                              stackA         <= stackB;
-                              state          <= State_Popped;
-                            end if;
+                              --       OPCODE: POP
+                              -- MACHINE CODE: 00110001
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                         -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(incIncSp);  -- from memory address SP+2
+                                  sp             <= incSp;                       -- increment SP (since we popped one value)
+                                  stackA         <= stackB;                      -- new stackA = old stackB
+                                  state          <= State_Popped;                -- go to state Popped
+                              end if;
 
                           when Insn_PopDown =>
                             if in_mem_busy = '0' then
@@ -1009,19 +1029,20 @@ begin
 
                   --------------------------------------------------------------------------------------
                   -- STATE: BINARYOPRESULT
+                  -- TODO: find out why does this state exist?
                   --------------------------------------------------------------------------------------
                   when State_BinaryOpResult =>
-                    state <= State_BinaryOpResult2;
+                      state <= State_BinaryOpResult2;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: BINARYOPRESULT2
                   --------------------------------------------------------------------------------------
                   when State_BinaryOpResult2 =>
-                    mem_readEnable <= '1';
-                    mem_addr       <= std_logic_vector(incIncSp);
-                    sp             <= incSp;
-                    stackA         <= binaryOpResult2;
-                    state          <= State_Popped;
+                      mem_readEnable <= '1';                        -- we wish to read from memory
+                      mem_addr       <= std_logic_vector(incIncSp); --  at address SP+2
+                      sp             <= incSp;                      -- increment SP (since we popped two values and push one)
+                      stackA         <= binaryOpResult2;            -- new stackA = result
+                      state          <= State_Popped;               -- go to state binaryOpResult2
 
                   --------------------------------------------------------------------------------------
                   -- STATE: POPPED
@@ -1030,56 +1051,60 @@ begin
                   --       state is always Execute, and stackA and stackB must be set to proper values
                   --------------------------------------------------------------------------------------
                   when State_Popped =>
-                     if in_mem_busy = '0' then
-                        pc     <= pc + 1;
-                        stackB <= unsigned(mem_read);
-                        state  <= State_Execute;
-                     end if;
+                      if in_mem_busy = '0' then
+                          pc     <= pc + 1;              -- execute next instruction
+                          stackB <= unsigned(mem_read);  -- load stackB with fetched value
+                          state  <= State_Execute;       -- execute next instruction
+                      end if;
 
                   --------------------------------------------------------------------------------------
-                  -- STATE: SHIFTLEFT2
+                  -- STATE: ASHIFTLEFT2
+                  -- TODO: Optimize the counter
                   --------------------------------------------------------------------------------------
                   when State_AShiftLeft2 =>
-                    if shiftA = "00000000" then
-                      state          <= State_ShiftDone;
-                    else
-                      shiftA         <= (shiftA - 1);
-                      shiftB         <= (shiftB sll 1);
-                    end if;
+                      if shiftA = "00000000" then                 -- if there is nothing more to shift
+                          state          <= State_ShiftDone;      -- go to state Done...
+                      else
+                          shiftA         <= (shiftA - 1);         -- decrease shift variable N
+                          shiftB         <= (shiftB sll 1);       -- arithmetic shift left
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: ASHIFTRIGHT2
+                  -- TODO: Optimize the counter
                   --------------------------------------------------------------------------------------
                   when State_AShiftRight2 =>
-                    if shiftA = "00000000" then
-                      state          <= State_ShiftDone;
-                    else
-                      shiftA         <= (shiftA - 1);
-                      shiftB         <= shiftB(wordSize-1) & shiftB(wordSize-1 downto 1);
-                    end if;
+                      if shiftA = "00000000" then                                             -- if there is nothing more to shift
+                          state          <= State_ShiftDone;                                  -- go to state Done...
+                      else
+                          shiftA         <= (shiftA - 1);                                     -- decrease shift variable N
+                          shiftB         <= shiftB(wordSize-1) & shiftB(wordSize-1 downto 1); -- arithmetic shift right
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LSHIFTRIGHT2
                   --------------------------------------------------------------------------------------
                   when State_LShiftRight2 =>
-                    if shiftA = "00000000" then
-                      state          <= State_ShiftDone;
-                    else
-                      shiftA         <= (shiftA - 1);
-                      shiftB         <= '0' & shiftB(wordSize-1 downto 1);
-                    end if;
+                      if shiftA = "00000000" then                              -- if there is nothing more to shift
+                          state          <= State_ShiftDone;                   -- go to state Done
+                      else
+                          shiftA         <= (shiftA - 1);                      -- decrease shift variable N
+                          shiftB         <= '0' & shiftB(wordSize-1 downto 1); -- logic shift right
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: SHIFTDONE
+                  -- This state issues the 'commands' to reload stackB, while loading current stackA
+                  -- with old stackB value
                   --------------------------------------------------------------------------------------
                   when State_ShiftDone =>
-                    if in_mem_busy = '0' then
-                      stackA         <= shiftB;
-                      mem_readEnable <= '1';
-                      mem_addr       <= std_logic_vector(incIncSp);
-                      sp             <= incSp;
-                      state          <= State_Popped;
-                    end if;
+                      if in_mem_busy = '0' then
+                          stackA         <= shiftB;                      -- new stackA = old stackB
+                          mem_readEnable <= '1';                         -- we wish to read from memory
+                          mem_addr       <= std_logic_vector(incIncSp);  -- at memory address SP+2
+                          sp             <= incSp;                       -- we effectively popped one value from stack
+                          state          <= State_Popped;                -- move to state Popped
+                      end if;
 
 
                   --------------------------------------------------------------------------------------
