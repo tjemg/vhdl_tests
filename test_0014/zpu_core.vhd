@@ -75,6 +75,7 @@ use work.zpupkg.all;
 --#  ------------------+-------+--------------------------------------------------------
 --#   interrupt        |  IN   | set to '1' until interrupts are cleared by CPU. 
 --###############################################################################################
+
 entity zpu_core is
     port (
         clk                 : in  std_logic;
@@ -91,64 +92,62 @@ entity zpu_core is
         break               : out std_logic  );
 end zpu_core;
 
-
 architecture behave of zpu_core is
+    type InsnType is (  Insn_AddTop,          Insn_Dup,             Insn_DupStackB,         Insn_Pop,
+                        Insn_PopDown,         Insn_Add,             Insn_Or,                Insn_And,
+                        Insn_Xor,             Insn_Store,           Insn_AddSP,             Insn_Shift,
+                        Insn_Nop,             Insn_Im,              Insn_LoadSP,            Insn_StoreSP,
+                        Insn_Emulate,         Insn_Load,            Insn_PushSP,            Insn_PopPC,
+                        Insn_PopPCrel,        Insn_Not,             Insn_Flip,              Insn_PopSP,
+                        Insn_Neqbranch,       Insn_Eq,              Insn_Loadb,             Insn_Mult,
+                        Insn_Lessthan,        Insn_Lessthanorequal, Insn_Ulessthanorequal,  Insn_Ulessthan,
+                        Insn_PushSPadd,       Insn_Call,            Insn_CallPCrel,         Insn_Sub,
+                        Insn_Break,           Insn_Storeb,          Insn_InsnFetch,         Insn_AShiftLeft,
+                        Insn_AShiftRight,     Insn_LShiftRight );
 
-  type InsnType is (  Insn_AddTop,          Insn_Dup,             Insn_DupStackB,         Insn_Pop,
-                      Insn_PopDown,         Insn_Add,             Insn_Or,                Insn_And,
-                      Insn_Xor,             Insn_Store,           Insn_AddSP,             Insn_Shift,
-                      Insn_Nop,             Insn_Im,              Insn_LoadSP,            Insn_StoreSP,
-                      Insn_Emulate,         Insn_Load,            Insn_PushSP,            Insn_PopPC,
-                      Insn_PopPCrel,        Insn_Not,             Insn_Flip,              Insn_PopSP,
-                      Insn_Neqbranch,       Insn_Eq,              Insn_Loadb,             Insn_Mult,
-                      Insn_Lessthan,        Insn_Lessthanorequal, Insn_Ulessthanorequal,  Insn_Ulessthan,
-                      Insn_PushSPadd,       Insn_Call,            Insn_CallPCrel,         Insn_Sub,
-                      Insn_Break,           Insn_Storeb,          Insn_InsnFetch,         Insn_AShiftLeft,
-                      Insn_AShiftRight,     Insn_LShiftRight );
+    type StateType is ( State_Load2,          State_Popped,         State_LoadSP2,          State_LoadSP3,
+                        State_AddSP2,         State_Fetch,          State_Execute,          State_Decode,
+                        State_Decode2,        State_Resync,         State_StoreSP2,         State_Resync2,
+                        State_Resync3,        State_Loadb2,         State_Storeb2,          State_Mult2,
+                        State_Mult3,          State_Mult5,          State_Mult4,            State_BinaryOpResult2,
+                        State_BinaryOpResult, State_Idle,           State_Interrupt,        State_AShiftLeft2,
+                        State_AShiftRight2,   State_LShiftRight2,   State_ShiftDone   ); 
 
-  type StateType is ( State_Load2,          State_Popped,         State_LoadSP2,          State_LoadSP3,
-                      State_AddSP2,         State_Fetch,          State_Execute,          State_Decode,
-                      State_Decode2,        State_Resync,         State_StoreSP2,         State_Resync2,
-                      State_Resync3,        State_Loadb2,         State_Storeb2,          State_Mult2,
-                      State_Mult3,          State_Mult5,          State_Mult4,            State_BinaryOpResult2,
-                      State_BinaryOpResult, State_Idle,           State_Interrupt,        State_AShiftLeft2,
-                      State_AShiftRight2,   State_LShiftRight2,   State_ShiftDone   ); 
+    type InsnArray   is array(0 to wordBytes-1) of InsnType;
+    type OpcodeArray is array(0 to wordBytes-1) of std_logic_vector(7 downto 0);
 
-  type InsnArray   is array(0 to wordBytes-1) of InsnType;
-  type OpcodeArray is array(0 to wordBytes-1) of std_logic_vector(7 downto 0);
-
-  signal pc                  : unsigned(maxAddrBitIncIO downto 0);           -- Program Counter
-  signal sp                  : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer
-  signal incSp               : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer + 1
-  signal incIncSp            : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer + 2
-  signal decSp               : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer - 1
-  signal stackA              : unsigned(wordSize-1 downto 0);                -- cached version of mem[SP]
-  signal stackB              : unsigned(wordSize-1 downto 0);                -- cached version of mem[SP+1]
-  signal binaryOpResult      : unsigned(wordSize-1 downto 0);
-  signal binaryOpResult2     : unsigned(wordSize-1 downto 0);
-  signal multResult2         : unsigned(wordSize-1 downto 0);
-  signal multResult3         : unsigned(wordSize-1 downto 0);
-  signal multResult          : unsigned(wordSize-1 downto 0);
-  signal multA               : unsigned(wordSize-1 downto 0);
-  signal multB               : unsigned(wordSize-1 downto 0);
-  signal shiftA              : unsigned(wordSize-1 downto 0);
-  signal shiftB              : unsigned(wordSize-1 downto 0);
-  signal shiftA_Next         : unsigned(wordSize-1 downto 0);
-  signal shiftB_Next         : unsigned(wordSize-1 downto 0);
-  signal idim_flag           : std_logic;
-  signal busy                : std_logic;
-  signal mem_writeEnable     : std_logic;
-  signal mem_readEnable      : std_logic;
-  signal mem_addr            : std_logic_vector(maxAddrBitIncIO downto minAddrBit);
-  signal mem_delayAddr       : std_logic_vector(maxAddrBitIncIO downto minAddrBit);
-  signal mem_delayReadEnable : std_logic;
-  signal inInterrupt         : std_logic;
-  signal decodeWord          : std_logic_vector(wordSize-1 downto 0);
-  signal state               : StateType;
-  signal insn                : InsnType;
-  signal decodedOpcode       : InsnArray;
-  signal opcode              : OpcodeArray;
-  signal bytesBitsCnt        : integer;
+    signal pc                  : unsigned(maxAddrBitIncIO downto 0);           -- Program Counter
+    signal sp                  : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer
+    signal incSp               : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer + 1
+    signal incIncSp            : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer + 2
+    signal decSp               : unsigned(maxAddrBitIncIO downto minAddrBit);  -- Stack Pointer - 1
+    signal stackA              : unsigned(wordSize-1 downto 0);                -- cached version of mem[SP]
+    signal stackB              : unsigned(wordSize-1 downto 0);                -- cached version of mem[SP+1]
+    signal binaryOpResult      : unsigned(wordSize-1 downto 0);
+    signal binaryOpResult2     : unsigned(wordSize-1 downto 0);
+    signal multResult2         : unsigned(wordSize-1 downto 0);
+    signal multResult3         : unsigned(wordSize-1 downto 0);
+    signal multResult          : unsigned(wordSize-1 downto 0);
+    signal multA               : unsigned(wordSize-1 downto 0);
+    signal multB               : unsigned(wordSize-1 downto 0);
+    signal shiftA              : unsigned(wordSize-1 downto 0);
+    signal shiftB              : unsigned(wordSize-1 downto 0);
+    signal shiftA_Next         : unsigned(wordSize-1 downto 0);
+    signal shiftB_Next         : unsigned(wordSize-1 downto 0);
+    signal idim_flag           : std_logic;
+    signal busy                : std_logic;
+    signal mem_writeEnable     : std_logic;
+    signal mem_readEnable      : std_logic;
+    signal mem_addr            : std_logic_vector(maxAddrBitIncIO downto minAddrBit);
+    signal mem_delayAddr       : std_logic_vector(maxAddrBitIncIO downto minAddrBit);
+    signal mem_delayReadEnable : std_logic;
+    signal inInterrupt         : std_logic;
+    signal decodeWord          : std_logic_vector(wordSize-1 downto 0);
+    signal state               : StateType;
+    signal insn                : InsnType;
+    signal decodedOpcode       : InsnArray;
+    signal opcode              : OpcodeArray;
+    signal bytesBitsCnt        : integer;
 
 -- Begin ZPU state machine.
 begin
@@ -420,7 +419,6 @@ begin
                               end case; -- tOpcode(3 downto 0)
                           end if; -- tOpcode
                           tDecodedOpcode(i) := tNextInsn;
-                          
                       end loop; -- 0 to wordBytes-1
 
                       insn              <= tDecodedOpcode(bytesBitsCnt);
@@ -544,9 +542,9 @@ begin
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   stackA                           <= (others => DontCareValue);
-                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;
-                                  pc                               <= pc + stackA(maxAddrBitIncIO downto 0);
-                                  state                            <= State_Fetch;
+                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;                                -- make TOS = PC+1
+                                  pc                               <= pc + stackA(maxAddrBitIncIO downto 0); -- next instr addr is previous TOS+pc
+                                  state                            <= State_Fetch;                           -- fetch the next instruction
                               end if;
 
                           when Insn_Call =>
@@ -556,9 +554,9 @@ begin
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   stackA                           <= (others => DontCareValue);
-                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;
-                                  pc                               <= stackA(maxAddrBitIncIO downto 0);
-                                  state                            <= State_Fetch;
+                                  stackA(maxAddrBitIncIO downto 0) <= pc + 1;                           -- make TOS = PC+1 (return address)
+                                  pc                               <= stackA(maxAddrBitIncIO downto 0); -- next instr addr is previous TOS (immediate addr)
+                                  state                            <= State_Fetch;                      -- fetch the next instruction
                               end if;
 
                           when Insn_AddSP =>
@@ -568,47 +566,53 @@ begin
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   state                            <= State_AddSP2;
-                                  mem_readEnable                   <= '1';
-                                  mem_addr                         <= std_logic_vector(sp+spOffset);
+                                  mem_readEnable                   <= '1';                              -- we wish to read from memory
+                                  mem_addr                         <= std_logic_vector(sp+spOffset);    -- at mem address SP+offset
                               end if;
 
                           when Insn_PushSP =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              pc         <= pc + 1;
-
-                              sp                                        <= decSp;
-                              stackA                                    <= (others => '0');
-                              stackA(maxAddrBitIncIO downto minAddrBit) <= sp;
-                              stackB                                    <= stackA;
-                              mem_writeEnable                           <= '1';
-                              mem_addr                                  <= std_logic_vector(incSp);
-                              mem_write                                 <= std_logic_vector(stackB);
-                            end if;
+                              --       OPCODE: PUSHSP
+                              -- MACHINE CODE: 00000010
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag                                 <= '0';
+                                  pc                                        <= pc + 1;                  -- move to next instruction
+                                  sp                                        <= decSp;                   -- make room for new value in stack
+                                  stackA                                    <= (others => '0');         -- make sure higher order bits are '0'
+                                  stackA(maxAddrBitIncIO downto minAddrBit) <= sp;                      -- TOS = SP
+                                  stackB                                    <= stackA;                  -- adjust stackB to value = old TOS
+                                  mem_writeEnable                           <= '1';                     -- we wish to write to memory
+                                  mem_addr                                  <= std_logic_vector(incSp); -- at address SP+1
+                                  mem_write                                 <= std_logic_vector(stackB);-- the cached stackB value
+                              end if;
 
                           when Insn_PopPC =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              pc         <= stackA(maxAddrBitIncIO downto 0);
-                              sp         <= incSp;
-
-                              mem_writeEnable <= '1';
-                              mem_addr        <= std_logic_vector(incSp);
-                              mem_write       <= std_logic_vector(stackB);
-                              state           <= State_Resync;
-                            end if;
+                              --       OPCODE: POPPC
+                              -- MACHINE CODE: 00000100
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag       <= '0';
+                                  pc              <= stackA(maxAddrBitIncIO downto 0);                  -- next instruction at address stackA
+                                  sp              <= incSp;                                             -- increment SP (due to popped value)
+                                  mem_writeEnable <= '1';                                               -- we wish to write to memory
+                                  mem_addr        <= std_logic_vector(incSp);                           -- to memory address SP+1
+                                  mem_write       <= std_logic_vector(stackB);                          -- the cached stackB value
+                                  state           <= State_Resync;                                      -- we need to resynch due to new PC value
+                              end if;
 
                           when Insn_PopPCrel =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              pc         <= stackA(maxAddrBitIncIO downto 0) + pc;
-                              sp         <= incSp;
-
-                              mem_writeEnable <= '1';
-                              mem_addr        <= std_logic_vector(incSp);
-                              mem_write       <= std_logic_vector(stackB);
-                              state           <= State_Resync;
-                            end if;
+                              --       OPCODE: POPPCREL
+                              -- MACHINE CODE: 00111001
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag       <= '0';
+                                  pc              <= stackA(maxAddrBitIncIO downto 0) + pc;             -- next instruction at address stackA+PC
+                                  sp              <= incSp;                                             -- increment SP (due to popped value)
+                                  mem_writeEnable <= '1';                                               -- we wish to write to memory
+                                  mem_addr        <= std_logic_vector(incSp);                           -- to memory address SP+1
+                                  mem_write       <= std_logic_vector(stackB);                          -- the caches stackB value
+                                  state           <= State_Resync;
+                              end if;
 
                           when Insn_AShiftLeft =>
                             idim_flag  <= '0';
@@ -935,9 +939,9 @@ begin
                   --------------------------------------------------------------------------------------
                   when State_AddSP2 =>
                       if in_mem_busy = '0' then
-                          pc     <= pc + 1;
-                          state  <= State_Execute;
-                          stackA <= stackA + unsigned(mem_read);
+                          pc     <= pc + 1;                                  -- increment program counter
+                          state  <= State_Execute;                           -- execute next instr
+                          stackA <= stackA + unsigned(mem_read);             -- TOS is now TOS + fetched value
                       end if;
 
                   --------------------------------------------------------------------------------------
