@@ -48,7 +48,8 @@ package zpupkg is
   -- reserved for CPU. Requires trivial tweaks in toolchain/runtime
   -- libraries.
   
-  constant byteBits   : integer := wordPower-3;  -- # of bits in a word that addresses bytes
+  constant byteBits   : integer := wordPower-3;  -- # of bits in a word that addresses bytes  (8 bits)
+  constant shortBits  : integer := wordPower-4;  -- # of bits in a word that addresses shorts (16 bits)
   constant maxAddrBit : integer := maxAddrBitIncIO-1;
   constant ioBit      : integer := maxAddrBit+1;
   constant wordSize   : integer := 2**wordPower;
@@ -164,6 +165,8 @@ package zpupkg is
   constant OpCode_NA2              : std_logic_vector(3 downto 0) := "1110";
   constant OpCode_NA               : std_logic_vector(3 downto 0) := "1111";
 
+  constant OpCode_Loadh            : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(34, 6));
+  constant OpCode_Storeh           : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(35, 6));
   constant OpCode_Lessthan         : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(36, 6));
   constant OpCode_Lessthanorequal  : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(37, 6));
   constant OpCode_Ulessthan        : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(38, 6));

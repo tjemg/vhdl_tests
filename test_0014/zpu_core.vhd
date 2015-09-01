@@ -103,7 +103,8 @@ architecture behave of zpu_core is
                         Insn_Lessthan,        Insn_Lessthanorequal, Insn_Ulessthanorequal,  Insn_Ulessthan,
                         Insn_PushSPadd,       Insn_Call,            Insn_CallPCrel,         Insn_Sub,
                         Insn_Break,           Insn_Storeb,          Insn_InsnFetch,         Insn_AShiftLeft,
-                        Insn_AShiftRight,     Insn_LShiftRight,     Insn_Neq,               Insn_Neg );
+                        Insn_AShiftRight,     Insn_LShiftRight,     Insn_Neq,               Insn_Neg,
+                        Insn_Loadh,           Insn_Storeh );
 
     type StateType is ( State_Load2,          State_Popped,         State_LoadSP2,          State_LoadSP3,
                         State_AddSP2,         State_Fetch,          State_Execute,          State_Decode,
@@ -111,7 +112,8 @@ architecture behave of zpu_core is
                         State_Resync3,        State_Loadb2,         State_Storeb2,          State_Mult2,
                         State_Mult3,          State_Mult5,          State_Mult4,            State_BinaryOpResult2,
                         State_BinaryOpResult, State_Idle,           State_Interrupt,        State_AShiftLeft2,
-                        State_AShiftRight2,   State_LShiftRight2,   State_ShiftDone   ); 
+                        State_AShiftRight2,   State_LShiftRight2,   State_ShiftDone,        State_Loadh2,
+                        State_Storeh2   ); 
 
     type InsnArray   is array(0 to wordBytes-1) of InsnType;
     type OpcodeArray is array(0 to wordBytes-1) of std_logic_vector(7 downto 0);
@@ -364,10 +366,14 @@ begin
                                   tNextInsn :=Insn_Ulessthanorequal;                         -- OPCODE: 00100111 (ULESSTHANOREQUAL)
                               elsif tOpcode(5 downto 0) = OpCode_Loadb then
                                   tNextInsn := Insn_Loadb;                                   -- OPCODE: 00110011 (LOADB)
+                              elsif tOpcode(5 downto 0) = OpCode_Loadh then
+                                  tNextInsn := Insn_Loadh;                                   -- OPCODE: 00100010 (LOADH)
                               elsif tOpcode(5 downto 0) = OpCode_Mult then
                                   tNextInsn := Insn_Mult;                                    -- OPCODE: 00101001 (MULT)
                               elsif tOpcode(5 downto 0) = OpCode_Storeb then
                                   tNextInsn := Insn_Storeb;                                  -- OPCODE: 00110100 (STOREB)
+                              elsif tOpcode(5 downto 0) = OpCode_Storeh then
+                                  tNextInsn := Insn_Storeh;                                  -- OPCODE: 00100011 (STOREH)
                               elsif tOpcode(5 downto 0) = OpCode_Pushspadd then
                                   tNextInsn := Insn_PushSPadd;                               -- OPCODE: 00111101 (PUSHSPADD)
                               elsif tOpcode(5 downto 0) = OpCode_Callpcrel then
@@ -988,6 +994,17 @@ begin
                                   state          <= State_Loadb2;                                                -- go to state Loadb2
                               end if;
 
+                          when Insn_Loadh =>
+                              --       OPCODE: LOADH
+                              -- MACHINE CODE: 00100010
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                                                         -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit)); -- from address 4*floor(stackA/4)
+                                  state          <= State_Loadh2;                                                -- go to state Loadh2
+                              end if;
+
                           when Insn_Storeb =>
                               --       OPCODE: STOREB
                               -- MACHINE CODE: 00110100
@@ -997,6 +1014,17 @@ begin
                                   mem_readEnable <= '1';                                                          -- we wish to read from memory
                                   mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- from address 4*floor(stackA/4) 
                                   state          <= State_Storeb2;                                                -- go to state Storeb2
+                              end if;
+
+                          when Insn_Storeh =>
+                              --       OPCODE: STOREB
+                              -- MACHINE CODE: 00100011
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                                                          -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- from address 4*floor(stackA/4) 
+                                  state          <= State_Storeh2;                                                -- go to state Storeh2
                               end if;
                             
                           when others =>
@@ -1061,15 +1089,29 @@ begin
                   -- STATE: LOADB2
                   -- NOTE:  In the conversion from byte to unsigned int 32, since memory can only be read
                   --        32 bit at a time, the 2 lower order bits of stackA are used to select the
-                  --        portion of the read value from memory when converting to uit32
+                  --        portion of the read value from memory when converting to uint32
                   --------------------------------------------------------------------------------------
                   when State_Loadb2 =>
-                    if in_mem_busy = '0' then
-                      stackA             <= (others => '0');                                                                                                                                -- make sure other bits of stackA are set to '0'
-                      stackA(7 downto 0) <= unsigned(mem_read(((wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8+7) downto (wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8)); -- convert byte to unsigned int 32
-                      pc                 <= pc + 1;                                                                                                                                         -- next instruction
-                      state              <= State_Execute;                                                                                                                                  -- execute it
-                    end if;
+                      if in_mem_busy = '0' then
+                          stackA             <= (others => '0');                                                                                                                                -- make sure other bits of stackA are set to '0'
+                          stackA(7 downto 0) <= unsigned(mem_read(((wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8+7) downto (wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8)); -- convert byte to unsigned int 32
+                          pc                 <= pc + 1;                                                                                                                                         -- next instruction
+                          state              <= State_Execute;                                                                                                                                  -- execute it
+                      end if;
+
+                  --------------------------------------------------------------------------------------
+                  -- STATE: LOADH2
+                  -- NOTE:  In the conversion from word to unsigned int 32, since memory can only be read
+                  --        32 bit at a time, the lower order bit of stackA is used to select the
+                  --        portion of the read value from memory when converting to uint32
+                  --------------------------------------------------------------------------------------
+                  when State_Loadh2 =>
+                      if in_mem_busy = '0' then
+                          stackA              <= (others => '0');                                                                                                                                     -- make sure other bits of stackA are set to '0'
+                          stackA(15 downto 0) <= unsigned(mem_read(((wordBytes-1-to_integer(stackA(shortBits-1 downto 0)))*16+15) downto (wordBytes-1-to_integer(stackA(shortBits-1 downto 0)))*16)); -- convert short to uint32
+                          pc                  <= pc + 1;                                                                                                                                              -- next instruction
+                          state               <= State_Execute;                                                                                                                                       -- execute it
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: STOREB2
@@ -1086,6 +1128,23 @@ begin
                           pc                                                                                                                                    <= pc + 1;                                                       -- next instruction
                           sp                                                                                                                                    <= incIncSp;                                                     -- we have just popped two values from stack
                           state                                                                                                                                 <= State_Resync;                                                 -- need to reload the stackA and stackB
+                      end if;
+
+                  --------------------------------------------------------------------------------------
+                  -- STATE: STOREH2
+                  -- NOTE:  In the conversion from word to unsigned int 32, since memory can only be read
+                  --        32 bit at a time, the lower order bit of stackA is used to select the
+                  --        portion of the read value from memory when converting to uint32
+                  --------------------------------------------------------------------------------------
+                  when State_Storeh2 =>
+                      if in_mem_busy = '0' then
+                          mem_writeEnable                                                                                                                            <= '1';                                                          -- we wish to write to memory
+                          mem_addr                                                                                                                                   <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- at address 4*floor(stackA/4) 
+                          mem_write                                                                                                                                  <= mem_read;                                                     -- make sure we write the same value as read before, except...
+                          mem_write(((wordBytes-1-to_integer(stackA(shortBits-1 downto 0)))*16+15) downto (wordBytes-1-to_integer(stackA(shortBits-1 downto 0)))*16) <= std_logic_vector(stackB(7 downto 0));                         -- the short at stackB corresponding to the lower 16 bits of stackB
+                          pc                                                                                                                                         <= pc + 1;                                                       -- next instruction
+                          sp                                                                                                                                         <= incIncSp;                                                     -- we have just popped two values from stack
+                          state                                                                                                                                      <= State_Resync;                                                 -- need to reload the stackA and stackB
                       end if;
 
                   --------------------------------------------------------------------------------------
