@@ -672,8 +672,9 @@ begin
 
                           when Insn_Pop =>
                               --       OPCODE: POP
-                              -- MACHINE CODE: 00110001
+                              -- MACHINE CODE: 01010000 (STORESP 0)
                               -- set idim_flag to '0'
+                              -- NOTE: this is actually an improved implementation of STORESP 0
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                         -- we wish to read from memory
@@ -684,57 +685,70 @@ begin
                               end if;
 
                           when Insn_PopDown =>
-                            if in_mem_busy = '0' then
-                                                      -- PopDown leaves top of stack unchanged
-                              idim_flag      <= '0';
-                              mem_addr       <= std_logic_vector(incIncSp);
-                              mem_readEnable <= '1';
-                              sp             <= incSp;
-                              state          <= State_Popped;
-                            end if;
+                              --       OPCODE: POPDOWN  (STORESP 1)
+                              -- MACHINE CODE: 01010001
+                              -- set idim_flag to '0'
+                              -- NOTE: 1) improved implementation of STORESP 1
+                              --       2) PopDown leaves TOS unchanged
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                        -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(incIncSp); -- from memory address SP+2
+                                  sp             <= incSp;                      -- increment SP (since we popped one value)
+                                  state          <= State_Popped;               -- go to state Popped
+                              end if;
 
                           when Insn_Or =>
-                            if in_mem_busy = '0' then
-                              idim_flag      <= '0';
-                              stackA         <= stackA or stackB;
-                              mem_readEnable <= '1';
-                              mem_addr       <= std_logic_vector(incIncSp);
-                              sp             <= incSp;
-                              state          <= State_Popped;
-                            end if;
+                              --       OPCODE: OR
+                              -- MACHINE CODE: 00000111
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  stackA         <= stackA or stackB;           -- new stackA = old stackA OR stackB
+                                  mem_readEnable <= '1';                        -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
+                                  sp             <= incSp;                      -- increment SP (since we popped two values and push another)
+                                  state          <= State_Popped;               -- go to state Popped
+                              end if;
 
                           when Insn_And =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              stackA         <= stackA and stackB;
-                              mem_readEnable <= '1';
-                              mem_addr       <= std_logic_vector(incIncSp);
-                              sp             <= incSp;
-                              state          <= State_Popped;
-                            end if;
+                              --       OPCODE: AND
+                              -- MACHINE CODE: 00000110
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  stackA         <= stackA and stackB;          -- new stackA = old stackA AND stackB
+                                  mem_readEnable <= '1';                        -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
+                                  sp             <= incSp;                      -- increment SP (since we popped two values and push another)
+                                  state          <= State_Popped;               -- go to state Popped
+                              end if;
 
                           when Insn_Xor =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              stackA         <= stackA xor stackB;
-                              mem_readEnable <= '1';
-                              mem_addr       <= std_logic_vector(incIncSp);
-                              sp             <= incSp;
-                              state          <= State_Popped;
-                            end if;
+                              --       OPCODE: XOR
+                              -- MACHINE CODE: 00110010
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  stackA         <= stackA xor stackB;          -- new stackA = old stackA XOR stackB
+                                  mem_readEnable <= '1';                        -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
+                                  sp             <= incSp;                      -- increment SP (since we popped two values and push another)
+                                  state          <= State_Popped;               -- go to state Popped
+                              end if;
 
                           when Insn_Eq =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              binaryOpResult <= (others => '0');
-                              if (stackA = stackB) then
-                                binaryOpResult(0) <= '1';
+                              --       OPCODE: XOR
+                              -- MACHINE CODE: 00101110
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag  <= '0';
+                                  binaryOpResult <= (others => '0');    -- make sure all bits of result are set to '0'
+                                  if (stackA = stackB) then             -- compare stackA and stackB
+                                      binaryOpResult(0) <= '1';         -- if equal, bit0 of result is set to '1'
+                                  end if;
+                                  state <= State_BinaryOpResult;        -- go to state BinaryOpResult
                               end if;
-                              state <= State_BinaryOpResult;
-                            end if;
 
                           when Insn_Ulessthan =>
                             if in_mem_busy = '0' then
@@ -1039,7 +1053,7 @@ begin
                   --------------------------------------------------------------------------------------
                   when State_BinaryOpResult2 =>
                       mem_readEnable <= '1';                        -- we wish to read from memory
-                      mem_addr       <= std_logic_vector(incIncSp); --  at address SP+2
+                      mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
                       sp             <= incSp;                      -- increment SP (since we popped two values and push one)
                       stackA         <= binaryOpResult2;            -- new stackA = result
                       state          <= State_Popped;               -- go to state binaryOpResult2
