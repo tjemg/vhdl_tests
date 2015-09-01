@@ -103,7 +103,7 @@ architecture behave of zpu_core is
                         Insn_Lessthan,        Insn_Lessthanorequal, Insn_Ulessthanorequal,  Insn_Ulessthan,
                         Insn_PushSPadd,       Insn_Call,            Insn_CallPCrel,         Insn_Sub,
                         Insn_Break,           Insn_Storeb,          Insn_InsnFetch,         Insn_AShiftLeft,
-                        Insn_AShiftRight,     Insn_LShiftRight );
+                        Insn_AShiftRight,     Insn_LShiftRight,     Insn_Neq,               Insn_Neg );
 
     type StateType is ( State_Load2,          State_Popped,         State_LoadSP2,          State_LoadSP3,
                         State_AddSP2,         State_Fetch,          State_Execute,          State_Decode,
@@ -345,7 +345,11 @@ begin
                               end if;
                           elsif (tOpcode(7 downto 5) = OpCode_Emulate) then
                               tNextInsn := Insn_Emulate;                                     -- per default emulate the instruction
-                              if tOpcode(5 downto 0) = OpCode_Neqbranch then
+                              if tOpcode(5 downto 0) = OpCode_Neq then
+                                  tNextInsn := Insn_Neq;                                     -- OPCODE: 00101111 (NEQ)
+                              elsif tOpcode(5 downto 0) = OpCode_Neg then
+                                  tNextInsn := Insn_Neg;                                     -- OPCODE: 00110000 (NEG)
+                              elsif tOpcode(5 downto 0) = OpCode_Neqbranch then
                                   tNextInsn := Insn_Neqbranch;                               -- OPCODE: 00111000 (NEQBRANCH)
                               elsif tOpcode(5 downto 0) = OpCode_Eq then
                                   tNextInsn := Insn_Eq;                                      -- OPCODE: 00101110 (EQ)
@@ -738,7 +742,7 @@ begin
                               end if;
 
                           when Insn_Eq =>
-                              --       OPCODE: XOR
+                              --       OPCODE: EQ
                               -- MACHINE CODE: 00101110
                               -- set idim_flag to '0'
                               if in_mem_busy = '0' then
@@ -749,6 +753,27 @@ begin
                                   end if;
                                   state <= State_BinaryOpResult;        -- go to state BinaryOpResult
                               end if;
+
+                          when Insn_Neq =>
+                              --       OPCODE: NEQ
+                              -- MACHINE CODE: 00101111
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag  <= '0';
+                                  binaryOpResult <= (others => '0');    -- make sure all bits of result are set to '0'
+                                  if (stackA /= stackB) then            -- compare stackA and stackB
+                                      binaryOpResult(0) <= '1';         -- if not equal, bit0 of result is set to '1'
+                                  end if;
+                                  state <= State_BinaryOpResult;        -- go to state BinaryOpResult
+                              end if;
+
+                          when Insn_Not =>
+                              --       OPCODE: NOT
+                              -- MACHINE CODE: 00110000
+                              -- set idim_flag to '0'
+                              idim_flag  <= '0';
+                              pc         <= pc + 1;
+                              stackA     <= 1 + not stackA; -- two's complement
 
                           when Insn_Ulessthan =>
                             if in_mem_busy = '0' then
