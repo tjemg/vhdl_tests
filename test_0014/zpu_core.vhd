@@ -767,7 +767,7 @@ begin
                                   state <= State_BinaryOpResult;        -- go to state BinaryOpResult
                               end if;
 
-                          when Insn_Not =>
+                          when Insn_Neg =>
                               --       OPCODE: NOT
                               -- MACHINE CODE: 00110000
                               -- set idim_flag to '0'
