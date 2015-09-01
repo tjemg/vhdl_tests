@@ -199,6 +199,7 @@ begin
           mem_readEnable  <= '0';
           mem_writeEnable <= '0';
           mem_write       <= (others => DontCareValue);
+          break           <= '0';
 
           if (mem_writeEnable = '1') and (mem_readEnable = '1') then
               -- if this condition happens, we halt execution until the condition clears...
@@ -911,76 +912,97 @@ begin
                               stackA     <= not stackA; -- new stackA = NOT old stackA
 
                           when Insn_Flip =>
+                              --       OPCODE: FLIP
+                              -- MACHINE CODE: 00001010
+                              -- set idim_flag to '0'
                               idim_flag  <= '0';
-                              pc         <= pc + 1;                 -- next instruction
+                              pc         <= pc + 1;                   -- next instruction
                               for i in 0 to wordSize-1 loop
                                   stackA(i) <= stackA(wordSize-1-i);  -- new stackA = flip bits of old stackA
                               end loop;
 
                           when Insn_AddTop =>
+                              --       OPCODE: ADDTOP
+                              -- MACHINE CODE: 00010001
+                              -- set idim_flag to '0'
                               idim_flag  <= '0';
-                              pc         <= pc + 1;
-                              stackA     <= stackA + stackB;
+                              pc         <= pc + 1;          -- next instruction
+                              stackA     <= stackA + stackB; -- new stackA = old stackA + old stackB
 
                           when Insn_Shift =>
-                            idim_flag  <= '0';
-                            pc         <= pc + 1;
-
-                            stackA(wordSize-1 downto 1) <= stackA(wordSize-2 downto 0);
-                            stackA(0)                   <= '0';
+                              --       OPCODE: SHIFT
+                              -- MACHINE CODE: 00010000
+                              -- set idim_flag to '0'
+                              idim_flag                   <= '0';
+                              pc                          <= pc + 1;                       -- next instruction
+                              stackA(wordSize-1 downto 1) <= stackA(wordSize-2 downto 0);  -- double stackA value
+                              stackA(0)                   <= '0';                          -- make sure bit0 is set to '0'
 
                           when Insn_PushSPadd =>
-                            idim_flag  <= '0';
-                            pc         <= pc + 1;
-
-                            stackA                                    <= (others => '0');
-                            stackA(maxAddrBitIncIO downto minAddrBit) <= stackA(maxAddrBitIncIO-minAddrBit downto 0)+sp;
+                              --       OPCODE: PUSHSPADD
+                              -- MACHINE CODE: 00111101
+                              -- set idim_flag to '0'
+                              idim_flag                                 <= '0';
+                              pc                                        <= pc + 1;                                           -- next instruction
+                              stackA                                    <= (others => '0');                                  -- make sure other bits of stackA are set to '0'
+                              stackA(maxAddrBitIncIO downto minAddrBit) <= stackA(maxAddrBitIncIO-minAddrBit downto 0) + sp; -- new stackA = old stackA + SP
 
                           when Insn_Neqbranch =>
-                            -- branches are almost always taken as they form loops
-                            idim_flag  <= '0';
-                            sp         <= incIncSp;
-                            if (stackB /= 0) then
-                              pc <= stackA(maxAddrBitIncIO downto 0) + pc;
-                            else
-                              pc <= pc + 1;
-                            end if;
-                            -- need to fetch stack again.                           
-                            state <= State_Resync;
+                              --       OPCODE: NEQBRANCH
+                              -- MACHINE CODE: 00111000
+                              -- set idim_flag to '0'
+                              -- NOTE: branches are almost always taken as they form loops
+                              idim_flag <= '0';
+                              sp        <= incIncSp;                                   -- we effectively pop two values
+                              if (stackB /= 0) then                                    -- compare stackB with zero
+                                  pc <= stackA(maxAddrBitIncIO downto 0) + pc;         -- if stackB is not zero, PC = stackA+PC
+                              else
+                                  pc <= pc + 1;                                        -- execute next instruction
+                              end if;
+                              state <= State_Resync;                                   -- need to re-load stackA and stackB
 
                           when Insn_Mult =>
-                            idim_flag  <= '0';
-
-                            multA <= stackA;
-                            multB <= stackB;
-                            state <= State_Mult2;
+                              --       OPCODE: MULT
+                              -- MACHINE CODE: 00101001
+                              -- set idim_flag to '0'
+                              idim_flag  <= '0';
+                              multA      <= stackA;       -- load multA variable with stackA
+                              multB      <= stackB;       -- load multB variable with stackB
+                              state      <= State_Mult2;  -- go to Mult2 state
 
                           when Insn_Break =>
-                            report "Break instruction encountered" severity failure;
-                            break <= '1';
+                              --       OPCODE: BREAK
+                              -- MACHINE CODE: 00101001
+                              -- set idim_flag to '0'
+                              report "Break instruction encountered" severity note;
+                              break <= '1';
 
                           when Insn_Loadb =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              state      <= State_Loadb2;
-
-                              mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));
-                              mem_readEnable <= '1';
-                            end if;
+                              --       OPCODE: LOADB
+                              -- MACHINE CODE: 00110011
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                                                         -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit)); -- from address 4*floor(stackA/4)
+                                  state          <= State_Loadb2;                                                -- go to state Loadb2
+                              end if;
 
                           when Insn_Storeb =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              state      <= State_Storeb2;
-
-                              mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));
-                              mem_readEnable <= '1';
-                            end if;
+                              --       OPCODE: STOREB
+                              -- MACHINE CODE: 00110100
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                                                          -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- from address 4*floor(stackA/4) 
+                                  state          <= State_Storeb2;                                                -- go to state Storeb2
+                              end if;
                             
                           when others =>
-                            sp    <= (others => DontCareValue);
-                            report "Illegal instruction" severity failure;
-                            break <= '1';
+                              sp    <= (others => DontCareValue);
+                              break <= '1';
+                              report "Illegal instruction" severity failure;
 
                     end case; -- insn/State_Execute
 
@@ -1037,28 +1059,34 @@ begin
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LOADB2
+                  -- NOTE:  In the conversion from byte to unsigned int 32, since memory can only be read
+                  --        32 bit at a time, the 2 lower order bits of stackA are used to select the
+                  --        portion of the read value from memory when converting to uit32
                   --------------------------------------------------------------------------------------
                   when State_Loadb2 =>
                     if in_mem_busy = '0' then
-                      stackA             <= (others => '0');
-                      stackA(7 downto 0) <= unsigned(mem_read(((wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8+7) downto (wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8));
-                      pc                 <= pc + 1;
-                      state              <= State_Execute;
+                      stackA             <= (others => '0');                                                                                                                                -- make sure other bits of stackA are set to '0'
+                      stackA(7 downto 0) <= unsigned(mem_read(((wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8+7) downto (wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8)); -- convert byte to unsigned int 32
+                      pc                 <= pc + 1;                                                                                                                                         -- next instruction
+                      state              <= State_Execute;                                                                                                                                  -- execute it
                     end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: STOREB2
+                  -- NOTE:  In the conversion from byte to unsigned int 32, since memory can only be read
+                  --        32 bit at a time, the 2 lower order bits of stackA are used to select the
+                  --        portion of the read value from memory when converting to uit32
                   --------------------------------------------------------------------------------------
                   when State_Storeb2 =>
-                    if in_mem_busy = '0' then
-                      mem_addr                                                                                                                              <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));
-                      mem_write                                                                                                                             <= mem_read;
-                      mem_write(((wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8+7) downto (wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8) <= std_logic_vector(stackB(7 downto 0));
-                      mem_writeEnable                                                                                                                       <= '1';
-                      pc                                                                                                                                    <= pc + 1;
-                      sp                                                                                                                                    <= incIncSp;
-                      state                                                                                                                                 <= State_Resync;
-                    end if;
+                      if in_mem_busy = '0' then
+                          mem_writeEnable                                                                                                                       <= '1';                                                          -- we wish to write to memory
+                          mem_addr                                                                                                                              <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- at address 4*floor(stackA/4) 
+                          mem_write                                                                                                                             <= mem_read;                                                     -- make sure we write the same value as read before, except...
+                          mem_write(((wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8+7) downto (wordBytes-1-to_integer(stackA(byteBits-1 downto 0)))*8) <= std_logic_vector(stackB(7 downto 0));                         -- the byte at stackB corresponding to the lower 8 bits of stackB
+                          pc                                                                                                                                    <= pc + 1;                                                       -- next instruction
+                          sp                                                                                                                                    <= incIncSp;                                                     -- we have just popped two values from stack
+                          state                                                                                                                                 <= State_Resync;                                                 -- need to reload the stackA and stackB
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: FETCH
@@ -1070,23 +1098,43 @@ begin
                       state          <= State_Decode;
                     end if;
 
+                  --------------------------------------------------------------------------------------
+                  -- STATE: MULT2
+                  -- NOTE: this state is required for the operation
+                  --       tMultResult <- multA * multB
+                  --------------------------------------------------------------------------------------
                   when State_Mult2 =>
-                    state <= State_Mult3;
+                      state <= State_Mult3;
 
+                  --------------------------------------------------------------------------------------
+                  -- STATE: MULT3
+                  -- NOTE: this state is required for the operation
+                  --       multResult <- tMultResult[ wordLen-1 .. 0 ]
+                  --------------------------------------------------------------------------------------
                   when State_Mult3 =>
-                    state <= State_Mult4;
+                      state <= State_Mult4;
 
+                  --------------------------------------------------------------------------------------
+                  -- STATE: MULT4
+                  -- NOTE: this state is required for the operation
+                  --       multResult2 <- multResult
+                  --------------------------------------------------------------------------------------
                   when State_Mult4 =>
-                    state <= State_Mult5;
+                      state <= State_Mult5;
 
+                  --------------------------------------------------------------------------------------
+                  -- STATE: MULT5
+                  -- NOTE: this state is required for the operation
+                  --       multResult3 <- multResult2
+                  --------------------------------------------------------------------------------------
                   when State_Mult5 =>
-                    if in_mem_busy = '0' then
-                      stackA         <= multResult3;
-                      mem_readEnable <= '1';
-                      mem_addr       <= std_logic_vector(incIncSp);
-                      sp             <= incSp;
-                      state          <= State_Popped;
-                    end if;
+                      if in_mem_busy = '0' then
+                          stackA         <= multResult3;
+                          mem_readEnable <= '1';                        -- we wish to read from memory
+                          mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
+                          sp             <= incSp;                      -- increment SP since we popped two values and 'pushed' another
+                          state          <= State_Popped;               -- go to state Popped
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: BINARYOPRESULT
