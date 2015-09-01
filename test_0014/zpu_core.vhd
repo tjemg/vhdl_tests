@@ -768,137 +768,159 @@ begin
                               end if;
 
                           when Insn_Neg =>
-                              --       OPCODE: NOT
+                              --       OPCODE: NEG
                               -- MACHINE CODE: 00110000
                               -- set idim_flag to '0'
                               idim_flag  <= '0';
-                              pc         <= pc + 1;
+                              pc         <= pc + 1;         -- next instruction
                               stackA     <= 1 + not stackA; -- two's complement
 
                           when Insn_Ulessthan =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              binaryOpResult <= (others => '0');
-                              if (stackA < stackB) then
-                                binaryOpResult(0) <= '1';
+                              --       OPCODE: ULESSTHAN
+                              -- MACHINE CODE: 00100101
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag  <= '0';
+                                  binaryOpResult <= (others => '0');  -- make sure all bits of result are set to '0'
+                                  if (stackA < stackB) then           -- compare stackA and stackB
+                                      binaryOpResult(0) <= '1';       -- if stackA<stackB, bit0 of result is set to '1'
+                                  end if;
+                                  state <= State_BinaryOpResult;      -- go to state BinaryOpResult
                               end if;
-                              state <= State_BinaryOpResult;
-                            end if;
 
                           when Insn_Ulessthanorequal =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              binaryOpResult <= (others => '0');
-                              if (stackA     <= stackB) then
-                                binaryOpResult(0) <= '1';
+                              --       OPCODE: ULESSTHANOREQUAL
+                              -- MACHINE CODE: 00100110
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  binaryOpResult <= (others => '0');  -- make sure all bits of result are set to '0'
+                                  if (stackA     <= stackB) then      -- compare stackA and stackB
+                                      binaryOpResult(0) <= '1';       -- if stackA<=stackB, bit0 of result is set to '1'
+                                  end if;
+                                  state <= State_BinaryOpResult;      -- go to state BinaryOpResult
                               end if;
-                              state <= State_BinaryOpResult;
-                            end if;
 
                           when Insn_Lessthan =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              binaryOpResult <= (others => '0');
-                              if (signed(stackA) < signed(stackB)) then
-                                binaryOpResult(0) <= '1';
+                              --       OPCODE: LESSTHAN
+                              -- MACHINE CODE: 00100100
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  binaryOpResult <= (others => '0');         -- make sure all bits of result are set to '0'
+                                  if (signed(stackA) < signed(stackB)) then  -- compare stackA and stackB
+                                      binaryOpResult(0) <= '1';              -- if stackA<stackB (signed), bit0 of result is set to '1'
+                                  end if;
+                                  state <= State_BinaryOpResult;             -- go to state BinaryOpResult
                               end if;
-                              state <= State_BinaryOpResult;
-                            end if;
 
                           when Insn_Lessthanorequal =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-
-                              binaryOpResult     <= (others => '0');
-                              if (signed(stackA) <= signed(stackB)) then
-                                binaryOpResult(0) <= '1';
+                              --       OPCODE: LESSTHAN
+                              -- MACHINE CODE: 00100101
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag          <= '0';
+                                  binaryOpResult     <= (others => '0');      -- make sure all bits of result are set to '0'
+                                  if (signed(stackA) <= signed(stackB)) then  -- compare stackA and stackB
+                                      binaryOpResult(0) <= '1';               -- if stackA<=stackB (signed), bit0 of result is set to '1'
+                                  end if;
+                                  state <= State_BinaryOpResult;              -- go to state BinaryOpResult
                               end if;
-                              state <= State_BinaryOpResult;
-                            end if;
 
                           when Insn_Load =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              state      <= State_Load2;
-
-                              mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));
-                              mem_readEnable <= '1';
-                            end if;
+                              --       OPCODE: LOAD
+                              -- MACHINE CODE: 00001000
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag      <= '0';
+                                  mem_readEnable <= '1';                                                          -- we wish to read from memory
+                                  mem_addr       <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- at address stackA
+                                  state          <= State_Load2;                                                  -- go to state Load2
+                              end if;
 
                           when Insn_Dup =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              pc         <= pc + 1;
-
-                              sp              <= decSp;
-                              stackB          <= stackA;
-                              mem_write       <= std_logic_vector(stackB);
-                              mem_addr        <= std_logic_vector(incSp);
-                              mem_writeEnable <= '1';
-                            end if;
+                              --       OPCODE: DUP
+                              -- MACHINE CODE: 01110000
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag       <= '0';
+                                  pc              <= pc + 1;                     -- execute next instruction
+                                  sp              <= decSp;                      -- effectively push a new value into stack
+                                  stackB          <= stackA;                     -- new stackB = old stackA
+                                  mem_writeEnable <= '1';                        -- we wish to write to memory
+                                  mem_addr        <= std_logic_vector(incSp);    -- at memory location SP+1
+                                  mem_write       <= std_logic_vector(stackB);   -- the old (cached) stackB value
+                              end if;
 
                           when Insn_DupStackB =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              pc         <= pc + 1;
-
-                              sp              <= decSp;
-                              stackA          <= stackB;
-                              stackB          <= stackA;
-                              mem_write       <= std_logic_vector(stackB);
-                              mem_addr        <= std_logic_vector(incSp);
-                              mem_writeEnable <= '1';
-                            end if;
+                              --       OPCODE: DUP
+                              -- MACHINE CODE: 01110001
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag       <= '0'; 
+                                  pc              <= pc + 1;                     -- execute next instruction
+                                  sp              <= decSp;                      -- effectively push a new value into stack
+                                  stackA          <= stackB;                     -- new stackA = old stackB
+                                  stackB          <= stackA;                     -- new stackB = old stackA
+                                  mem_writeEnable <= '1';                        -- we wish to write to memory
+                                  mem_addr        <= std_logic_vector(incSp);    -- at address SP+1
+                                  mem_write       <= std_logic_vector(stackB);   -- the old stackB value
+                              end if;
 
                           when Insn_Store =>
-                            if in_mem_busy = '0' then
-                              idim_flag       <= '0';
-                              pc              <= pc + 1;
-                              mem_addr        <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));
-                              mem_write       <= std_logic_vector(stackB);
-                              mem_writeEnable <= '1';
-                              sp              <= incIncSp;
-                              state           <= State_Resync;
-                            end if;
+                              --       OPCODE: STORE
+                              -- MACHINE CODE: 00001100
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag       <= '0';
+                                  pc              <= pc + 1;                                                       -- execute next instruction
+                                  mem_writeEnable <= '1';                                                          -- we wish to write
+                                  mem_addr        <= std_logic_vector(stackA(maxAddrBitIncIO downto minAddrBit));  -- to memory address stackA
+                                  mem_write       <= std_logic_vector(stackB);                                     -- the value stackB
+                                  sp              <= incIncSp;                                                     -- SP=SP+2 since we popped two values
+                                  state           <= State_Resync;                                                 -- we need to reload stackA and stackB
+                              end if;
 
                           when Insn_PopSP =>
-                            if in_mem_busy = '0' then
-                              idim_flag  <= '0';
-                              pc         <= pc + 1;
-
-                              mem_write       <= std_logic_vector(stackB);
-                              mem_addr        <= std_logic_vector(incSp);
-                              mem_writeEnable <= '1';
-                              sp              <= stackA(maxAddrBitIncIO downto minAddrBit);
-                              state           <= State_Resync;
-                            end if;
+                              --       OPCODE: POPSP
+                              -- MACHINE CODE: 00001101
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag       <= '0';
+                                  pc              <= pc + 1;                                     -- execute next instruction
+                                  mem_writeEnable <= '1';                                        -- we wish to write to memory
+                                  mem_addr        <= std_logic_vector(incSp);                    -- at address SP+1
+                                  mem_write       <= std_logic_vector(stackB);                   -- the cached (old) stackB value
+                                  sp              <= stackA(maxAddrBitIncIO downto minAddrBit);  -- new SP = stackA
+                                  state           <= State_Resync;                               -- we need to reload stackA and stackB
+                              end if;
 
                           when Insn_Nop =>
-                            idim_flag  <= '0';
-                            pc         <= pc + 1;
+                              --       OPCODE: NOP
+                              -- MACHINE CODE: 00001011
+                              -- set idim_flag to '0'
+                              idim_flag  <= '0';
+                              pc         <= pc + 1;  -- execute next instruction
 
                           when Insn_Not =>
-                            idim_flag  <= '0';
-                            pc         <= pc + 1;
-
-                            stackA     <= not stackA;
+                              --       OPCODE: NOT
+                              -- MACHINE CODE: 00001001
+                              -- set idim_flag to '0'
+                              idim_flag  <= '0';
+                              pc         <= pc + 1;     -- next instruction
+                              stackA     <= not stackA; -- new stackA = NOT old stackA
 
                           when Insn_Flip =>
-                            idim_flag  <= '0';
-                            pc         <= pc + 1;
-
-                            for i in 0 to wordSize-1 loop
-                              stackA(i) <= stackA(wordSize-1-i);
-                            end loop;
+                              idim_flag  <= '0';
+                              pc         <= pc + 1;                 -- next instruction
+                              for i in 0 to wordSize-1 loop
+                                  stackA(i) <= stackA(wordSize-1-i);  -- new stackA = flip bits of old stackA
+                              end loop;
 
                           when Insn_AddTop =>
-                            idim_flag  <= '0';
-                            pc         <= pc + 1;
-
-                            stackA     <= stackA + stackB;
+                              idim_flag  <= '0';
+                              pc         <= pc + 1;
+                              stackA     <= stackA + stackB;
 
                           when Insn_Shift =>
                             idim_flag  <= '0';
@@ -1007,11 +1029,11 @@ begin
                   -- STATE: LOAD2
                   --------------------------------------------------------------------------------------
                   when State_Load2 =>
-                    if in_mem_busy = '0' then
-                      stackA <= unsigned(mem_read);
-                      pc     <= pc + 1;
-                      state  <= State_Execute;
-                    end if;
+                      if in_mem_busy = '0' then
+                          stackA <= unsigned(mem_read);    -- new stackA = mem[ old stackA ]
+                          pc     <= pc + 1;                -- next instruction
+                          state  <= State_Execute;         -- go to execute
+                      end if;
 
                   --------------------------------------------------------------------------------------
                   -- STATE: LOADB2
