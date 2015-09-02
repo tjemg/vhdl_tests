@@ -25,4 +25,5 @@ test_0011:      Y      Y     Y   Test Inferred RAM initialization in FPGA
 test_0012:      Y      Y     Y   Blinky 2 with clock divider (test PulseView)
 test_0013:      Y      Y     Y   ZPU + Sinus Generator
 test_0014:      Y      Y     Y   Cleanup, documentation and improvement of ZPU core
+test_0015:      Y      ?     ?   VHDL implementation of unsigned division
 ```

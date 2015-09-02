@@ -33,7 +33,8 @@ prog_ram.o: ram
 	ghdl -a $(FLAGS) prog_ram.vhd
 
 run:
-	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
+#	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
+	ghdl -r $(TARGET) --wave=test.ghw --stop-time=4us
 
 bit:
 	rm -rf build

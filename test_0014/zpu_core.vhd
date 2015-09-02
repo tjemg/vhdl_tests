@@ -104,7 +104,8 @@ architecture behave of zpu_core is
                         Insn_PushSPadd,       Insn_Call,            Insn_CallPCrel,         Insn_Sub,
                         Insn_Break,           Insn_Storeb,          Insn_InsnFetch,         Insn_AShiftLeft,
                         Insn_AShiftRight,     Insn_LShiftRight,     Insn_Neq,               Insn_Neg,
-                        Insn_Loadh,           Insn_Storeh,          Insn_Eqbranch );
+                        Insn_Loadh,           Insn_Storeh,          Insn_Eqbranch,          Insn_Div,
+                        Insn_Mod,             Insn_PushPc   );
 
     type StateType is ( State_Load2,          State_Popped,         State_LoadSP2,          State_LoadSP3,
                         State_AddSP2,         State_Fetch,          State_Execute,          State_Decode,
@@ -113,7 +114,7 @@ architecture behave of zpu_core is
                         State_Mult3,          State_Mult5,          State_Mult4,            State_BinaryOpResult2,
                         State_BinaryOpResult, State_Idle,           State_Interrupt,        State_AShiftLeft2,
                         State_AShiftRight2,   State_LShiftRight2,   State_ShiftDone,        State_Loadh2,
-                        State_Storeh2   ); 
+                        State_Storeh2,        State_Div2,           State_Div3 ); 
 
     type InsnArray   is array(0 to wordBytes-1) of InsnType;
     type OpcodeArray is array(0 to wordBytes-1) of std_logic_vector(7 downto 0);
@@ -136,6 +137,12 @@ architecture behave of zpu_core is
     signal shiftB              : unsigned(wordSize-1 downto 0);
     signal shiftA_Next         : unsigned(wordSize-1 downto 0);
     signal shiftB_Next         : unsigned(wordSize-1 downto 0);
+    signal divNum              : unsigned(wordSize-1 downto 0); -- Numerator
+    signal divDen              : unsigned(wordSize-1 downto 0); -- Denominator
+    signal divBuf              : unsigned(2*wordSize-1 downto 0);
+    signal divCnt              : unsigned(wordPower downto 0);
+    signal divSign             : std_logic;
+    signal divMod              : std_logic;
     signal idim_flag           : std_logic;
     signal busy                : std_logic;
     signal mem_writeEnable     : std_logic;
@@ -150,6 +157,9 @@ architecture behave of zpu_core is
     signal decodedOpcode       : InsnArray;
     signal opcode              : OpcodeArray;
     signal bytesBitsCnt        : integer;
+
+    alias divBuf1 is divBuf((2 * wordSize-1) downto wordSize);
+    alias divBuf2 is divBuf(    (wordSize-1) downto 0);
 
 -- Begin ZPU state machine.
 begin
@@ -348,7 +358,11 @@ begin
                               end if;
                           elsif (tOpcode(7 downto 5) = OpCode_Emulate) then
                               tNextInsn := Insn_Emulate;                                     -- per default emulate the instruction
-                              if tOpcode(5 downto 0) = OpCode_Neq then
+                              if tOpcode(5 downto 0) = OpCode_Div then
+                                  tNextInsn := Insn_Div;                                     -- OPCODE: 00110101 (DIV)
+                              elsif tOpcode(5 downto 0) = OpCode_Mod then
+                                  tNextInsn := Insn_Mod;                                     -- OPCODE: 00110110 (MOD)
+                              elsif tOpcode(5 downto 0) = OpCode_Neq then
                                   tNextInsn := Insn_Neq;                                     -- OPCODE: 00101111 (NEQ)
                               elsif tOpcode(5 downto 0) = OpCode_Neg then
                                   tNextInsn := Insn_Neg;                                     -- OPCODE: 00110000 (NEG)
@@ -378,6 +392,8 @@ begin
                                   tNextInsn := Insn_Storeh;                                  -- OPCODE: 00100011 (STOREH)
                               elsif tOpcode(5 downto 0) = OpCode_Pushspadd then
                                   tNextInsn := Insn_PushSPadd;                               -- OPCODE: 00111101 (PUSHSPADD)
+                              elsif tOpcode(5 downto 0) = OpCode_PushPc then
+                                  tNextInsn := Insn_PushPc;                                  -- OPCODE: 00111011 (PUSHPC)
                               elsif tOpcode(5 downto 0) = OpCode_Callpcrel then
                                   tNextInsn := Insn_CallPCrel;                               -- OPCODE: 00111111 (CALLPCREL)
                               elsif tOpcode(5 downto 0) = OpCode_Call then
@@ -955,6 +971,22 @@ begin
                               stackA                                    <= (others => '0');                                  -- make sure other bits of stackA are set to '0'
                               stackA(maxAddrBitIncIO downto minAddrBit) <= stackA(maxAddrBitIncIO-minAddrBit downto 0) + sp; -- new stackA = old stackA + SP
 
+                          when Insn_PushPc =>
+                              --       OPCODE: PUSHPC
+                              -- MACHINE CODE: 00111011
+                              -- set idim_flag to '0'
+                              if in_mem_busy = '0' then
+                                  idim_flag                        <= '0';
+                                  pc                               <= pc + 1;                   -- next instruction
+                                  stackA                           <= (others => '0');          -- make sure other bits of stackA are set to '0'
+                                  stackA(maxAddrBitIncIO downto 0) <= pc;                       -- new stackA = PC
+                                  stackB                           <= stackA;                   -- new stackB is now stackA
+                                  mem_writeEnable                  <= '1';                      -- we wish to write cached stackB
+                                  mem_addr                         <= std_logic_vector(incSp);  -- to memory addr = SP+1
+                                  mem_write                        <= std_logic_vector(stackB); -- save cached stackB value
+                                  state                            <= State_Execute;            -- go to state Execute
+                              end if;
+
                           when Insn_Neqbranch =>
                               --       OPCODE: NEQBRANCH
                               -- MACHINE CODE: 00111000
@@ -990,6 +1022,63 @@ begin
                               multA      <= stackA;       -- load multA variable with stackA
                               multB      <= stackB;       -- load multB variable with stackB
                               state      <= State_Mult2;  -- go to Mult2 state
+
+                          when Insn_Div =>
+                              --       OPCODE: DIV
+                              -- MACHINE CODE: 00110101
+                              -- set idim_flag to '0'
+                              idim_flag  <= '0';
+                              if (stackB = 0) then
+                                  state  <= State_Div3;  -- go to Div3 state
+                                  report "Division by zero!" severity failure;
+                              else
+                                  state   <= State_Div2;  -- go to Div2 state
+                                  divMod  <= '0';         -- we wish to divide
+                                  divBuf1 <= (others => '0');
+                                  if (stackB(wordSize-1)='1') then
+                                      divNum  <= 1 + not stackB;  -- load numerator with -stackB
+                                      divBuf2 <= 1 + not stackB;  -- numerator
+                                  else
+                                      divNum  <= stackB;          -- load numerator with +stackB
+                                      divBuf2 <= stackB;          -- numerator
+                                  end if;
+                                  if (stackA(wordSize-1)='1') then
+                                      divDen  <= 1 + not stackA;  -- load denominator with -stackA
+                                  else
+                                      divDen  <= stackA;          -- load denominator with +stackA
+                                  end if;
+                                  divSign <= stackA(wordSize-1) xor stackB(wordSize-1);
+                                  divCnt  <= to_unsigned(1,wordPower+1);
+                              end if;
+
+                          when Insn_Mod =>
+                              --       OPCODE: DIV
+                              -- MACHINE CODE: 00110110
+                              -- set idim_flag to '0'
+                              idim_flag  <= '0';
+                              report "MOD" severity note;
+                              if (stackB = 0) then
+                                  state  <= State_Div3;  -- go to Div3 state
+                                  report "Division by zero!" severity failure;
+                              else
+                                  state   <= State_Div2;  -- go to Div2 state
+                                  divMod  <= '1';         -- we wish to compute modulo operation
+                                  divBuf1 <= (others => '0');
+                                  if (stackB(wordSize-1)='1') then
+                                      divNum  <= 1 + not stackB;  -- load numerator with -stackB
+                                      divBuf2 <= 1 + not stackB;  -- numerator
+                                  else
+                                      divNum  <= stackB;          -- load numerator with +stackB
+                                      divBuf2 <= stackB;          -- numerator
+                                  end if;
+                                  if (stackA(wordSize-1)='1') then
+                                      divDen  <= 1 + not stackA;  -- load denominator with -stackA
+                                  else
+                                      divDen  <= stackA;          -- load denominator with +stackA
+                                  end if;
+                                  divSign <= stackB(wordSize-1);
+                                  divCnt  <= to_unsigned(1,wordPower+1);
+                              end if;
 
                           when Insn_Break =>
                               --       OPCODE: BREAK
@@ -1204,6 +1293,51 @@ begin
                   when State_Mult5 =>
                       if in_mem_busy = '0' then
                           stackA         <= multResult3;
+                          mem_readEnable <= '1';                        -- we wish to read from memory
+                          mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
+                          sp             <= incSp;                      -- increment SP since we popped two values and 'pushed' another
+                          state          <= State_Popped;               -- go to state Popped
+                      end if;
+
+                  --------------------------------------------------------------------------------------
+                  -- STATE: DIV2 
+                  --------------------------------------------------------------------------------------
+                  when State_Div2 =>
+                      if unsigned(divBuf((2 * wordSize - 2) downto (wordSize - 1))) >= unsigned(divDen) then
+                          divBuf1 <= '0' & (divBuf((2 * wordSize - 3) downto (wordSize - 1)) - divDen((wordSize - 2) downto 0));
+                          divBuf2 <= divBuf2((wordSize - 2) downto 0) & '1';
+                      else
+                          divBuf <= divBuf((2 * wordSize - 2) downto 0) & '0';
+                      end if;
+                      if divCnt /= wordSize then
+                          divCnt <= divCnt + 1;
+                          state  <= State_Div2;
+                          report "DIV2 " severity note;
+                      else
+                          state  <= State_Div3;
+                      end if;
+                  --------------------------------------------------------------------------------------
+                  -- STATE: DIV3 
+                  --------------------------------------------------------------------------------------
+                  when State_Div3 =>
+                      if in_mem_busy = '0' then
+                          if divMod='0' then
+                              report "Division" severity note;
+                              -- we wish to return the division value
+                              if divSign='1' then
+                                  stackA     <= 1 + not divBuf2;
+                              else
+                                  stackA     <= divBuf2;
+                              end if;
+                          else
+                              report "Modulo" severity note;
+                              -- we wish to return the modulo value
+                              if divSign='1' then
+                                  stackA     <= 1 + not divBuf1;
+                              else
+                                  stackA     <= divBuf1;
+                              end if;
+                          end if;
                           mem_readEnable <= '1';                        -- we wish to read from memory
                           mem_addr       <= std_logic_vector(incIncSp); -- at address SP+2
                           sp             <= incSp;                      -- increment SP since we popped two values and 'pushed' another

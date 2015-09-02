@@ -1,24 +1,33 @@
 [*]
-[*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Thu Mar  5 21:54:55 2015
+[*] GTKWave Analyzer v3.3.62 (w)1999-2014 BSI
+[*] Wed Sep  2 20:56:17 2015
 [*]
-[dumpfile] "test.ghw"
-[dumpfile_mtime] "Thu Mar  5 21:53:18 2015"
-[dumpfile_size] 8275039
-[savefile] "test.gtkw"
+[dumpfile] "/home/gasiba/Work/vhdl_tests/test_0014/test.ghw"
+[dumpfile_mtime] "Wed Sep  2 20:54:54 2015"
+[dumpfile_size] 28611
+[savefile] "/home/gasiba/Work/vhdl_tests/test_0014/test.gtkw"
 [timestart] 0
 [size] 1366 715
-[pos] -1 -1
-*-38.526192 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -914 6
+*-29.643364 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.sim_fpga_top.
+[treeopen] top.sim_fpga_top.mytoplevel.
+[treeopen] top.sim_fpga_top.mytoplevel.zpu.
 [sst_width] 210
 [signals_width] 150
 [sst_expanded] 1
-[sst_vpaned_height] 195
+[sst_vpaned_height] 190
 @28
 top.sim_fpga_top.clk
 top.sim_fpga_top.areset
+@22
+#{top.sim_fpga_top.mytoplevel.zpu.divbuf[63:0]} top.sim_fpga_top.mytoplevel.zpu.divbuf[63] top.sim_fpga_top.mytoplevel.zpu.divbuf[62] top.sim_fpga_top.mytoplevel.zpu.divbuf[61] top.sim_fpga_top.mytoplevel.zpu.divbuf[60] top.sim_fpga_top.mytoplevel.zpu.divbuf[59] top.sim_fpga_top.mytoplevel.zpu.divbuf[58] top.sim_fpga_top.mytoplevel.zpu.divbuf[57] top.sim_fpga_top.mytoplevel.zpu.divbuf[56] top.sim_fpga_top.mytoplevel.zpu.divbuf[55] top.sim_fpga_top.mytoplevel.zpu.divbuf[54] top.sim_fpga_top.mytoplevel.zpu.divbuf[53] top.sim_fpga_top.mytoplevel.zpu.divbuf[52] top.sim_fpga_top.mytoplevel.zpu.divbuf[51] top.sim_fpga_top.mytoplevel.zpu.divbuf[50] top.sim_fpga_top.mytoplevel.zpu.divbuf[49] top.sim_fpga_top.mytoplevel.zpu.divbuf[48] top.sim_fpga_top.mytoplevel.zpu.divbuf[47] top.sim_fpga_top.mytoplevel.zpu.divbuf[46] top.sim_fpga_top.mytoplevel.zpu.divbuf[45] top.sim_fpga_top.mytoplevel.zpu.divbuf[44] top.sim_fpga_top.mytoplevel.zpu.divbuf[43] top.sim_fpga_top.mytoplevel.zpu.divbuf[42] top.sim_fpga_top.mytoplevel.zpu.divbuf[41] top.sim_fpga_top.mytoplevel.zpu.divbuf[40] top.sim_fpga_top.mytoplevel.zpu.divbuf[39] top.sim_fpga_top.mytoplevel.zpu.divbuf[38] top.sim_fpga_top.mytoplevel.zpu.divbuf[37] top.sim_fpga_top.mytoplevel.zpu.divbuf[36] top.sim_fpga_top.mytoplevel.zpu.divbuf[35] top.sim_fpga_top.mytoplevel.zpu.divbuf[34] top.sim_fpga_top.mytoplevel.zpu.divbuf[33] top.sim_fpga_top.mytoplevel.zpu.divbuf[32] top.sim_fpga_top.mytoplevel.zpu.divbuf[31] top.sim_fpga_top.mytoplevel.zpu.divbuf[30] top.sim_fpga_top.mytoplevel.zpu.divbuf[29] top.sim_fpga_top.mytoplevel.zpu.divbuf[28] top.sim_fpga_top.mytoplevel.zpu.divbuf[27] top.sim_fpga_top.mytoplevel.zpu.divbuf[26] top.sim_fpga_top.mytoplevel.zpu.divbuf[25] top.sim_fpga_top.mytoplevel.zpu.divbuf[24] top.sim_fpga_top.mytoplevel.zpu.divbuf[23] top.sim_fpga_top.mytoplevel.zpu.divbuf[22] top.sim_fpga_top.mytoplevel.zpu.divbuf[21] top.sim_fpga_top.mytoplevel.zpu.divbuf[20] top.sim_fpga_top.mytoplevel.zpu.divbuf[19] top.sim_fpga_top.mytoplevel.zpu.divbuf[18] top.sim_fpga_top.mytoplevel.zpu.divbuf[17] top.sim_fpga_top.mytoplevel.zpu.divbuf[16] top.sim_fpga_top.mytoplevel.zpu.divbuf[15] top.sim_fpga_top.mytoplevel.zpu.divbuf[14] top.sim_fpga_top.mytoplevel.zpu.divbuf[13] top.sim_fpga_top.mytoplevel.zpu.divbuf[12] top.sim_fpga_top.mytoplevel.zpu.divbuf[11] top.sim_fpga_top.mytoplevel.zpu.divbuf[10] top.sim_fpga_top.mytoplevel.zpu.divbuf[9] top.sim_fpga_top.mytoplevel.zpu.divbuf[8] top.sim_fpga_top.mytoplevel.zpu.divbuf[7] top.sim_fpga_top.mytoplevel.zpu.divbuf[6] top.sim_fpga_top.mytoplevel.zpu.divbuf[5] top.sim_fpga_top.mytoplevel.zpu.divbuf[4] top.sim_fpga_top.mytoplevel.zpu.divbuf[3] top.sim_fpga_top.mytoplevel.zpu.divbuf[2] top.sim_fpga_top.mytoplevel.zpu.divbuf[1] top.sim_fpga_top.mytoplevel.zpu.divbuf[0]
+@23
+#{top.sim_fpga_top.mytoplevel.zpu.divnum[31:0]} top.sim_fpga_top.mytoplevel.zpu.divnum[31] top.sim_fpga_top.mytoplevel.zpu.divnum[30] top.sim_fpga_top.mytoplevel.zpu.divnum[29] top.sim_fpga_top.mytoplevel.zpu.divnum[28] top.sim_fpga_top.mytoplevel.zpu.divnum[27] top.sim_fpga_top.mytoplevel.zpu.divnum[26] top.sim_fpga_top.mytoplevel.zpu.divnum[25] top.sim_fpga_top.mytoplevel.zpu.divnum[24] top.sim_fpga_top.mytoplevel.zpu.divnum[23] top.sim_fpga_top.mytoplevel.zpu.divnum[22] top.sim_fpga_top.mytoplevel.zpu.divnum[21] top.sim_fpga_top.mytoplevel.zpu.divnum[20] top.sim_fpga_top.mytoplevel.zpu.divnum[19] top.sim_fpga_top.mytoplevel.zpu.divnum[18] top.sim_fpga_top.mytoplevel.zpu.divnum[17] top.sim_fpga_top.mytoplevel.zpu.divnum[16] top.sim_fpga_top.mytoplevel.zpu.divnum[15] top.sim_fpga_top.mytoplevel.zpu.divnum[14] top.sim_fpga_top.mytoplevel.zpu.divnum[13] top.sim_fpga_top.mytoplevel.zpu.divnum[12] top.sim_fpga_top.mytoplevel.zpu.divnum[11] top.sim_fpga_top.mytoplevel.zpu.divnum[10] top.sim_fpga_top.mytoplevel.zpu.divnum[9] top.sim_fpga_top.mytoplevel.zpu.divnum[8] top.sim_fpga_top.mytoplevel.zpu.divnum[7] top.sim_fpga_top.mytoplevel.zpu.divnum[6] top.sim_fpga_top.mytoplevel.zpu.divnum[5] top.sim_fpga_top.mytoplevel.zpu.divnum[4] top.sim_fpga_top.mytoplevel.zpu.divnum[3] top.sim_fpga_top.mytoplevel.zpu.divnum[2] top.sim_fpga_top.mytoplevel.zpu.divnum[1] top.sim_fpga_top.mytoplevel.zpu.divnum[0]
+@22
+#{top.sim_fpga_top.mytoplevel.zpu.divden[31:0]} top.sim_fpga_top.mytoplevel.zpu.divden[31] top.sim_fpga_top.mytoplevel.zpu.divden[30] top.sim_fpga_top.mytoplevel.zpu.divden[29] top.sim_fpga_top.mytoplevel.zpu.divden[28] top.sim_fpga_top.mytoplevel.zpu.divden[27] top.sim_fpga_top.mytoplevel.zpu.divden[26] top.sim_fpga_top.mytoplevel.zpu.divden[25] top.sim_fpga_top.mytoplevel.zpu.divden[24] top.sim_fpga_top.mytoplevel.zpu.divden[23] top.sim_fpga_top.mytoplevel.zpu.divden[22] top.sim_fpga_top.mytoplevel.zpu.divden[21] top.sim_fpga_top.mytoplevel.zpu.divden[20] top.sim_fpga_top.mytoplevel.zpu.divden[19] top.sim_fpga_top.mytoplevel.zpu.divden[18] top.sim_fpga_top.mytoplevel.zpu.divden[17] top.sim_fpga_top.mytoplevel.zpu.divden[16] top.sim_fpga_top.mytoplevel.zpu.divden[15] top.sim_fpga_top.mytoplevel.zpu.divden[14] top.sim_fpga_top.mytoplevel.zpu.divden[13] top.sim_fpga_top.mytoplevel.zpu.divden[12] top.sim_fpga_top.mytoplevel.zpu.divden[11] top.sim_fpga_top.mytoplevel.zpu.divden[10] top.sim_fpga_top.mytoplevel.zpu.divden[9] top.sim_fpga_top.mytoplevel.zpu.divden[8] top.sim_fpga_top.mytoplevel.zpu.divden[7] top.sim_fpga_top.mytoplevel.zpu.divden[6] top.sim_fpga_top.mytoplevel.zpu.divden[5] top.sim_fpga_top.mytoplevel.zpu.divden[4] top.sim_fpga_top.mytoplevel.zpu.divden[3] top.sim_fpga_top.mytoplevel.zpu.divden[2] top.sim_fpga_top.mytoplevel.zpu.divden[1] top.sim_fpga_top.mytoplevel.zpu.divden[0]
+#{top.sim_fpga_top.mytoplevel.zpu.divcnt[5:0]} top.sim_fpga_top.mytoplevel.zpu.divcnt[5] top.sim_fpga_top.mytoplevel.zpu.divcnt[4] top.sim_fpga_top.mytoplevel.zpu.divcnt[3] top.sim_fpga_top.mytoplevel.zpu.divcnt[2] top.sim_fpga_top.mytoplevel.zpu.divcnt[1] top.sim_fpga_top.mytoplevel.zpu.divcnt[0]
 @420
 #{top.sim_fpga_top.io_port0[31:0]} top.sim_fpga_top.io_port0[31] top.sim_fpga_top.io_port0[30] top.sim_fpga_top.io_port0[29] top.sim_fpga_top.io_port0[28] top.sim_fpga_top.io_port0[27] top.sim_fpga_top.io_port0[26] top.sim_fpga_top.io_port0[25] top.sim_fpga_top.io_port0[24] top.sim_fpga_top.io_port0[23] top.sim_fpga_top.io_port0[22] top.sim_fpga_top.io_port0[21] top.sim_fpga_top.io_port0[20] top.sim_fpga_top.io_port0[19] top.sim_fpga_top.io_port0[18] top.sim_fpga_top.io_port0[17] top.sim_fpga_top.io_port0[16] top.sim_fpga_top.io_port0[15] top.sim_fpga_top.io_port0[14] top.sim_fpga_top.io_port0[13] top.sim_fpga_top.io_port0[12] top.sim_fpga_top.io_port0[11] top.sim_fpga_top.io_port0[10] top.sim_fpga_top.io_port0[9] top.sim_fpga_top.io_port0[8] top.sim_fpga_top.io_port0[7] top.sim_fpga_top.io_port0[6] top.sim_fpga_top.io_port0[5] top.sim_fpga_top.io_port0[4] top.sim_fpga_top.io_port0[3] top.sim_fpga_top.io_port0[2] top.sim_fpga_top.io_port0[1] top.sim_fpga_top.io_port0[0]
 @8420

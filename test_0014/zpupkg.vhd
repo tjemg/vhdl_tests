@@ -184,9 +184,12 @@ package zpupkg is
   constant OpCode_Xor              : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(50, 6));
   constant OpCode_Loadb            : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(51, 6));
   constant OpCode_Storeb           : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(52, 6));
+  constant OpCode_Div              : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(53, 6));
+  constant OpCode_Mod              : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(54, 6));
   constant OpCode_Eqbranch         : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(55, 6));
   constant OpCode_Neqbranch        : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(56, 6));
   constant OpCode_Poppcrel         : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(57, 6));
+  constant OpCode_PushPc           : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(59, 6));
   constant OpCode_Pushspadd        : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(61, 6));
   constant OpCode_Mult16x16        : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(62, 6));
   constant OpCode_Callpcrel        : std_logic_vector(5 downto 0) := std_logic_vector(to_unsigned(63, 6));
