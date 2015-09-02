@@ -1,0 +1,30 @@
+[*]
+[*] GTKWave Analyzer v3.3.62 (w)1999-2014 BSI
+[*] Wed Sep  2 17:04:58 2015
+[*]
+[dumpfile] "/home/gasiba/Work/vhdl_tests/test_0015/test.ghw"
+[dumpfile_mtime] "Wed Sep  2 17:04:43 2015"
+[dumpfile_size] 3083
+[savefile] "/home/gasiba/Work/vhdl_tests/test_0015/test.gtkw"
+[timestart] 0
+[size] 878 729
+[pos] 56 45
+*-27.405500 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.testbench.
+[sst_width] 210
+[signals_width] 166
+[sst_expanded] 1
+[sst_vpaned_height] 154
+@28
+top.testbench.clk
+top.testbench.areset
+@29
+top.testbench.donesig
+@22
+#{top.testbench.numerator[31:0]} top.testbench.numerator[31] top.testbench.numerator[30] top.testbench.numerator[29] top.testbench.numerator[28] top.testbench.numerator[27] top.testbench.numerator[26] top.testbench.numerator[25] top.testbench.numerator[24] top.testbench.numerator[23] top.testbench.numerator[22] top.testbench.numerator[21] top.testbench.numerator[20] top.testbench.numerator[19] top.testbench.numerator[18] top.testbench.numerator[17] top.testbench.numerator[16] top.testbench.numerator[15] top.testbench.numerator[14] top.testbench.numerator[13] top.testbench.numerator[12] top.testbench.numerator[11] top.testbench.numerator[10] top.testbench.numerator[9] top.testbench.numerator[8] top.testbench.numerator[7] top.testbench.numerator[6] top.testbench.numerator[5] top.testbench.numerator[4] top.testbench.numerator[3] top.testbench.numerator[2] top.testbench.numerator[1] top.testbench.numerator[0]
+#{top.testbench.denominator[31:0]} top.testbench.denominator[31] top.testbench.denominator[30] top.testbench.denominator[29] top.testbench.denominator[28] top.testbench.denominator[27] top.testbench.denominator[26] top.testbench.denominator[25] top.testbench.denominator[24] top.testbench.denominator[23] top.testbench.denominator[22] top.testbench.denominator[21] top.testbench.denominator[20] top.testbench.denominator[19] top.testbench.denominator[18] top.testbench.denominator[17] top.testbench.denominator[16] top.testbench.denominator[15] top.testbench.denominator[14] top.testbench.denominator[13] top.testbench.denominator[12] top.testbench.denominator[11] top.testbench.denominator[10] top.testbench.denominator[9] top.testbench.denominator[8] top.testbench.denominator[7] top.testbench.denominator[6] top.testbench.denominator[5] top.testbench.denominator[4] top.testbench.denominator[3] top.testbench.denominator[2] top.testbench.denominator[1] top.testbench.denominator[0]
+#{top.testbench.result[31:0]} top.testbench.result[31] top.testbench.result[30] top.testbench.result[29] top.testbench.result[28] top.testbench.result[27] top.testbench.result[26] top.testbench.result[25] top.testbench.result[24] top.testbench.result[23] top.testbench.result[22] top.testbench.result[21] top.testbench.result[20] top.testbench.result[19] top.testbench.result[18] top.testbench.result[17] top.testbench.result[16] top.testbench.result[15] top.testbench.result[14] top.testbench.result[13] top.testbench.result[12] top.testbench.result[11] top.testbench.result[10] top.testbench.result[9] top.testbench.result[8] top.testbench.result[7] top.testbench.result[6] top.testbench.result[5] top.testbench.result[4] top.testbench.result[3] top.testbench.result[2] top.testbench.result[1] top.testbench.result[0]
+#{top.testbench.remainder[31:0]} top.testbench.remainder[31] top.testbench.remainder[30] top.testbench.remainder[29] top.testbench.remainder[28] top.testbench.remainder[27] top.testbench.remainder[26] top.testbench.remainder[25] top.testbench.remainder[24] top.testbench.remainder[23] top.testbench.remainder[22] top.testbench.remainder[21] top.testbench.remainder[20] top.testbench.remainder[19] top.testbench.remainder[18] top.testbench.remainder[17] top.testbench.remainder[16] top.testbench.remainder[15] top.testbench.remainder[14] top.testbench.remainder[13] top.testbench.remainder[12] top.testbench.remainder[11] top.testbench.remainder[10] top.testbench.remainder[9] top.testbench.remainder[8] top.testbench.remainder[7] top.testbench.remainder[6] top.testbench.remainder[5] top.testbench.remainder[4] top.testbench.remainder[3] top.testbench.remainder[2] top.testbench.remainder[1] top.testbench.remainder[0]
+[pattern_trace] 1
+[pattern_trace] 0
