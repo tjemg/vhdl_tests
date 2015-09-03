@@ -64,7 +64,7 @@ main(int argc, char **argv) {
     printf("\n");
     printf("type ram_type is array(natural range 0 to ((2**(maxAddrBitDRAM+1))/4)-1) of std_logic_vector(wordSize-1 downto 0);\n");
     printf("\n");
-    printf("shared variable ram : ram_type := (\n");
+    printf("signal ram : ram_type := (\n");
 
     while(1) {
         // Read 32 bits.
@@ -92,7 +92,7 @@ main(int argc, char **argv) {
     printf("    if areset = '1' then\n");
     printf("        elsif (clk'event and clk = '1') then\n");
     printf("            if (mem_writeEnable = '1') then\n");
-    printf("                ram(to_integer(unsigned(mem_addr(maxAddrBit downto minAddrBit)))) := mem_write;\n");
+    printf("                ram(to_integer(unsigned(mem_addr(maxAddrBit downto minAddrBit)))) <= mem_write;\n");
     printf("            end if;\n");
     printf("        if (mem_readEnable = '1') then\n");
     printf("            mem_read <= ram(to_integer(unsigned(mem_addr(maxAddrBit downto minAddrBit))));\n");
