@@ -102,8 +102,8 @@ static char *udt[MAX_TYPE+1] = {"??","uc","us","ui","ul","ull","f","d","ld","v",
 // #                                                 PRIVATE FUNCTIONS                                                     #
 // #########################################################################################################################
 
-#define UNHANDLED_CASE                             \
-        printf("***WARNING*** Unhandled case\n");  \
+#define UNHANDLED_CASE(case_str)                              \
+        printf("***WARNING*** Unhandled case: "case_str"\n"); \
 	exit(0);
 
 char *objType(int type) {
@@ -133,6 +133,13 @@ void functionPreamble( FILE *f, struct IC *p, struct Var *v, zmax offset) {
     emit(f,"\tIM %d\n", -reqStackSpace/4);
     emit(f,"\tPUSHSPADD\n", -reqStackSpace/4);
     emit(f,"\tPOPSP\n", -reqStackSpace/4);
+    emit(f,"\n");
+}
+
+// Generate Function Closure
+void functionClosure( FILE *f, struct IC *p, struct Var *v, zmax offset) {
+    emit(f,"\tPUSHPC\n");
+    emit(f,"\tPOPPC\n" );
     emit(f,"\n");
 }
 
@@ -180,7 +187,7 @@ void loadInt( FILE *f, int val ){
             }
         } else {
             //printf(" %d", (signed int)values[ii]);
-            emit(f,"\tIM %d\n",(signed int)values[ii]);
+            emit(f,"\tIM %d  ;  %d  (0x%.08x)\n",(signed int)values[ii], val, val);
         }
     }
     printf("\n");
@@ -196,23 +203,39 @@ void opASSIGN( FILE *f, struct IC *p ) {
     printf("                   dst: %s", objType(z->flags));
     printf("\n");
     printf("INFO SRC:\n");
+    if (KONST==(KONST&q1->flags)) {
+        printf("   const:%d\n", q1->val.vint );
+    }
     if (q1->v) { printVar(q1->v); }
     printf("INFO DST:\n");
     if (z->v) { printVar(z->v); }
     printf("\n\n");
 
-    if ( (KONST == q1->flags) && (VAR == z->flags) ){
-          // Assign a constant to a variable
-        if (z->v->storage_class) {
+    if ( (KONST == q1->flags) && (VAR == VAR && z->flags) ){
+        // Assign a constant to a variable
+        if ( (VAR==z->flags) && (AUTO == z->v->storage_class) ) {
+            // variable is located in stack
 	    printf("CONST -> STACK\n");
 	    loadInt(f,q1->val.vint);
-            emit(f,"\tSTORESP %d\n", 4*z->v->offset);
-        } else {
-            UNHANDLED_CASE;
+            emit(f,"\tSTORESP %d\n", z->v->offset);
+            emit(f,"\n");
+	    return;
         }
-    } else {
-        UNHANDLED_CASE;
+        if ( (DREFOBJ==(DREFOBJ&z->flags)) && (AUTO == z->v->storage_class) ) {
+            // variable needs to be dereferenced
+	    printf("CONST -> *\n");
+	    loadInt(f,q1->val.vint);
+            emit(f,"\tNOP\n");
+	    loadInt(f,z->v->offset);
+            emit(f,"\tPUSHSP\n");
+            emit(f,"\tADD\n");
+            emit(f,"\tSTORE\n");
+            emit(f,"\n");
+	    return;
+        }
+        UNHANDLED_CASE("ASSIGN KONST -> ?");
     }
+    UNHANDLED_CASE("ASSIGN ? -> ?");
 }
 
 
@@ -417,10 +440,6 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
     printf("GEN_CODE : %s%s (%s)\n", idprefix, v->identifier, v->filename);
     printf("var stackframe size = %d\n", offset);
 
-    //localsize = (zm2l(offset)+3)/4*4;
-
-    //function_top(f, v, localsize);
-
     // FUNCTION PRE-AMBLE
     printf("Preamble\n");
     functionPreamble(f,p,v,offset);
@@ -509,6 +528,8 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (LITERAL==c)      { printf("LITERAL\n");      }
         if (REINTERPRET==c)  { printf("REINTERPRET\n");  }
     }
+    
+    functionClosure(f,p,v,offset);
 }
 
 int shortcut(int code,int typ) {
