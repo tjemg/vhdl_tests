@@ -68,7 +68,7 @@
 // CALLPCREL          0011 1111
 
 
-#define MEM_SIZE    16*1024*1025     // 16Mb should be enough...  
+#define MEM_SIZE    16*1024*1025     // 16Mb should be enough...
 struct {
     unsigned char  *memVal;    // encoded value in memory
     char           *final;     // =0 final value, =1 needs further processing
@@ -115,6 +115,11 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
     int           tmp;
     unsigned char machineCode;
 
+    memoryLayout.mnemonic[memPos] = (char *)malloc(1+sizeof(mnemonic));
+    strcpy( memoryLayout.mnemonic[memPos], mnemonic );
+    memoryLayout.operand[memPos] = (char *)malloc(1+sizeof(operand));
+    strcpy( memoryLayout.operand[memPos], operand);
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     if (0==strcmp(mnemonic,"IM")) {
         if ( isInteger(operand) ) {
@@ -122,7 +127,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
             machineCode                 = 0x80 | tmp;
             memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
             memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-            printf("0x%.02x\n",machineCode);
             goto couldFinal;
         } else {
             // cannot finalize encoding
@@ -134,7 +138,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x3d;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -142,7 +145,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x0d;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +154,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
             machineCode                 = 0x40 | tmp ^ 0x10;
             memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
             memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-            printf("0x%.02x\n",machineCode);
             goto couldFinal;
         }
     }
@@ -161,7 +162,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x0b;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -169,7 +169,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x02;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -177,7 +176,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x05;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +183,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x0c;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,7 +190,6 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x3b;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,16 +197,11 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         machineCode                 = 0x04;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
-        printf("0x%.02x\n",machineCode);
         goto couldFinal;
     }
 
 cannotFinal:
     memoryLayout.final[memPos] = 0;
-    memoryLayout.mnemonic[memPos] = (char *)malloc(1+sizeof(mnemonic));
-    strcpy( memoryLayout.mnemonic[memPos], mnemonic );
-    memoryLayout.operand[memPos] = (char *)malloc(1+sizeof(operand));
-    strcpy( memoryLayout.operand[memPos], operand);
     return encLen;
 
 couldFinal:
@@ -234,9 +225,7 @@ int main( int argc, char **argv ) {
     int            numBytes;
     int            flagComplete;
     unsigned long  maxMem;
-
-    printf("(C) 2015, Tiago Gasiba\n");
-    printf("\n");
+    int            produceVHDL = 0;
 
     memoryLayout.memVal    = (unsigned char  *)malloc(MEM_SIZE*sizeof(unsigned char));
     memoryLayout.final     = (         char  *)malloc(MEM_SIZE*sizeof(         char));
@@ -254,9 +243,25 @@ int main( int argc, char **argv ) {
         memoryLayout.operand[ii]   = NULL;
     }
 
-    if (argc!=2) {
-        printf("ERROR: missing file name\n");
+    if ( (2!=argc) && (3!=argc) ) {
+        printf("(C) 2015, Tiago Gasiba\n");
+        printf("\n");
+        printf("ERROR: syntax asm file_name [-vhdl]\n");
         exit(0);
+    }
+
+    if (3==argc) {
+        if (0==strcmp("-vhdl",argv[2])) {
+            produceVHDL = 1;
+        } else {
+            printf("(C) 2015, Tiago Gasiba\n");
+            printf("\n");
+            printf("ERROR: unknown parameter '%s'\n",argv[2]);
+            exit(0);
+        }
+    } else {
+        printf("(C) 2015, Tiago Gasiba\n");
+        printf("\n");
     }
 
     // FIRST STEP
@@ -277,7 +282,7 @@ int main( int argc, char **argv ) {
             strcpy(label,line);
             trim(label);
             rtrim(label);
-            line = tmp+1; 
+            line = tmp+1;
             trim(line);
             rtrim(line);
         } else {
@@ -288,7 +293,7 @@ int main( int argc, char **argv ) {
             strcpy(mnemonic,line);
             trim(mnemonic);
             rtrim(mnemonic);
-            line = tmp+1; 
+            line = tmp+1;
             trim(line);
             rtrim(line);
             strcpy(operand,line);
@@ -298,7 +303,7 @@ int main( int argc, char **argv ) {
         }
 
         if ( (0==strcmp(label,"")) && (0==strcmp(mnemonic,"")) ) { continue; }
-        printf("<MEM: 0x%04x> <LBL: '%10s'>  <MNM: '%15s'>  <OP: '%5s'>\n", memCnt, label, mnemonic, operand);
+//        printf("<MEM: 0x%04x> <LBL: '%10s'>  <MNM: '%15s'>  <OP: '%5s'>\n", memCnt, label, mnemonic, operand);
 
         if (0!=strcmp(label,"")) {
             tmp = (char *)malloc(1+strlen(label));
@@ -335,15 +340,81 @@ doneCompiling:
             maxMem = ii;
         }
     }
-    printf("USAGE: %d bytes\n", 1+maxMem);
 
-    for (ii=0; ii<=maxMem; ii++) {
-        if (1==memoryLayout.final[ii])
-            printf("0x%04x: 0x%02x\n",ii, memoryLayout.memVal[ii]);
-        else
-            printf("0x%04x: 0x%02x ! <%s %s>\n",ii, memoryLayout.memVal[ii],
-                                                    memoryLayout.mnemonic[ii],
-                                                    memoryLayout.operand[ii]);
+    if (0==produceVHDL) {
+        printf("USAGE: %d bytes\n", 1+maxMem);
+
+        for (ii=0; ii<=maxMem; ii++) {
+            if (1==memoryLayout.final[ii])
+                printf("0x%04x: 0x%02x   < %-18s %-5s >\n",ii, memoryLayout.memVal[ii],
+                                                               memoryLayout.mnemonic[ii],
+                                                               memoryLayout.operand[ii]);
+            else
+                printf("0x%04x: 0x%02x ! < %-18s %-5s >\n",ii, memoryLayout.memVal[ii],
+                                                               memoryLayout.mnemonic[ii],
+                                                               memoryLayout.operand[ii]);
+        }
+    }  else {
+        printf("--\n");
+        printf("-- (C) 2015, ASM2VHDL, Tiago Gasiba\n");
+        printf("--           Automatically Generated RAM file\n");
+        printf("--           Please do NOT CHANGE!\n");
+        printf("--\n");
+        printf("library ieee;\n");
+        printf("use ieee.std_logic_1164.all;\n");
+        printf("use ieee.numeric_std.all;\n");
+        printf("\n");
+        printf("\n");
+        printf("library work;\n");
+        printf("use work.zpu_config.all;\n");
+        printf("use work.zpupkg.all;\n");
+        printf("\n");
+        printf("entity dram is\n");
+        printf("port (clk             : in std_logic;\n");
+        printf("      areset          : in std_logic;\n");
+        printf("      mem_writeEnable : in std_logic;\n");
+        printf("      mem_readEnable  : in std_logic;\n");
+        printf("      mem_addr        : in std_logic_vector(maxAddrBit downto 0);\n");
+        printf("      mem_write       : in std_logic_vector(wordSize-1 downto 0);\n");
+        printf("      mem_read        : out std_logic_vector(wordSize-1 downto 0);\n");
+        printf("      mem_busy        : out std_logic;\n");
+        printf("      mem_writeMask   : in std_logic_vector(wordBytes-1 downto 0));\n");
+        printf("end dram;\n");
+        printf("\n");
+        printf("architecture dram_arch of dram is\n");
+        printf("\n");
+        printf("\n");
+        printf("type ram_type is array(natural range 0 to ((2**(maxAddrBitDRAM+1))/4)-1) of std_logic_vector(wordSize-1 downto 0);\n");
+        printf("\n");
+        printf("signal ram : ram_type := (\n");
+
+        for (ii=0; ii<(1+maxMem>>2); ii++) {
+            printf("%6d => x\"%02x%02x%02x%02x\",\n", ii, memoryLayout.memVal[4*ii+0],
+                                                          memoryLayout.memVal[4*ii+1],
+                                                          memoryLayout.memVal[4*ii+2],
+                                                          memoryLayout.memVal[4*ii+3] );
+        }
+        printf("others => x\"00000000\"\n");
+        printf(");\n");
+        printf("\n");
+        printf("begin\n");
+        printf("\n");
+        printf("mem_busy<=mem_readEnable; -- we're done on the cycle after we serve the read request\n");
+        printf("\n");
+        printf("process (clk, areset)\n");
+        printf("begin\n");
+        printf("    if areset = '1' then\n");
+        printf("        elsif (clk'event and clk = '1') then\n");
+        printf("            if (mem_writeEnable = '1') then\n");
+        printf("                ram(to_integer(unsigned(mem_addr(maxAddrBit downto minAddrBit)))) <= mem_write;\n");
+        printf("            end if;\n");
+        printf("        if (mem_readEnable = '1') then\n");
+        printf("            mem_read <= ram(to_integer(unsigned(mem_addr(maxAddrBit downto minAddrBit))));\n");
+        printf("        end if;\n");
+        printf("    end if;\n");
+        printf("end process;\n");
+        printf("\n");
+        printf("end dram_arch;\n");
     }
     return 0;
 }
