@@ -101,6 +101,11 @@ static char *udt[MAX_TYPE+1] = {"??","uc","us","ui","ul","ull","f","d","ld","v",
 // #########################################################################################################################
 // #                                                 PRIVATE FUNCTIONS                                                     #
 // #########################################################################################################################
+
+#define UNHANDLED_CASE                             \
+        printf("***WARNING*** Unhandled case\n");  \
+	exit(0);
+
 char *objType(int type) {
     static char typeName[512] = {0};
 
@@ -126,6 +131,59 @@ void functionPreamble( FILE *f, struct IC *p, struct Var *v, zmax offset) {
     printf("Generate Function Preamble (required stack-space = %d bytes)\n", reqStackSpace);
     emit(f,"%s%s:\n", idprefix, v->identifier);  // function label
     emit(f,"\tIM %d\n", -reqStackSpace/4);
+    emit(f,"\tPUSHSPADD\n", -reqStackSpace/4);
+    emit(f,"\tPOPSP\n", -reqStackSpace/4);
+    emit(f,"\n");
+}
+
+void printVar( struct Var *v ) {
+    static char storageClass[20];
+    
+    if (1==v->storage_class) { strcpy(storageClass,"AUTO");     }
+    if (2==v->storage_class) { strcpy(storageClass,"REGISTER"); }
+    if (3==v->storage_class) { strcpy(storageClass,"STATIC");   }
+    if (4==v->storage_class) { strcpy(storageClass,"EXTERN");   }
+    if (5==v->storage_class) { strcpy(storageClass,"TYPEDEF");  }
+    
+    printf("VAR :          name = '%s'\n", v->identifier);
+    printf("      storage_class = %s\n", storageClass);
+    if (isauto(v->storage_class)!=0) {
+        // offset contains the offset inside the local-variables section
+        printf("             offset = %d\n", v->offset);
+    }
+}
+
+
+// loadInt: pushes an immediate integer into the stack
+// NOTE - since the ZPU IM instruction can only push 7 bits each time
+//        several IM instructions are issued for a single integer.
+//        The number of IM instructions depends on the integer value
+//        and can range from 1 to 5 (for 32-bit architecture)
+void loadInt( FILE *f, int val ){
+    int          remainder = val;
+    signed char  val7;
+    signed char  values[5];
+    int          ii;
+
+    for (ii=0; ii<5; ii++) {
+         values[4-ii] = remainder & 0x7f;
+	 if ( 0x40 == (remainder & 0x40) ) {
+             values[4-ii] |= 0x80;
+	 }
+        remainder >>= 7;
+    }
+    for (ii=0; ii<5; ii++) {
+        if (ii!=4) {
+            if ( (values[ii]!=values[ii+1]) && !((-1==values[ii] && 0x80==(values[ii+1]&0x80)) || (0==values[ii] && 0x00==(values[ii+1]&0x80))) ) {
+                //printf(" %d", (signed int)values[ii]);
+                emit(f,"\tIM %d\n",(signed int)values[ii]);
+            }
+        } else {
+            //printf(" %d", (signed int)values[ii]);
+            emit(f,"\tIM %d\n",(signed int)values[ii]);
+        }
+    }
+    printf("\n");
 }
 
 // Operation  : ASSIGN
@@ -137,6 +195,24 @@ void opASSIGN( FILE *f, struct IC *p ) {
     printf("ASSIGN: (lin:%.4d) src: %s\n", p->line, objType(q1->flags));
     printf("                   dst: %s", objType(z->flags));
     printf("\n");
+    printf("INFO SRC:\n");
+    if (q1->v) { printVar(q1->v); }
+    printf("INFO DST:\n");
+    if (z->v) { printVar(z->v); }
+    printf("\n\n");
+
+    if ( (KONST == q1->flags) && (VAR == z->flags) ){
+          // Assign a constant to a variable
+        if (z->v->storage_class) {
+	    printf("CONST -> STACK\n");
+	    loadInt(f,q1->val.vint);
+            emit(f,"\tSTORESP %d\n", 4*z->v->offset);
+        } else {
+            UNHANDLED_CASE;
+        }
+    } else {
+        UNHANDLED_CASE;
+    }
 }
 
 

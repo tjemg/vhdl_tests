@@ -1,4 +1,9 @@
 int main( void ){
-    int x = 10;
-    int y = 20;
+    volatile int x;
+    volatile int y;
+    volatile int z;
+
+    y = 180;
+    x = -20;
+    z = 2;
 }
