@@ -9,65 +9,6 @@
 #include <string.h>
 #include <unistd.h>
 
-//
-// IM x               1xxx xxxx
-// PUSHSPADD          0011 1101
-// POPSP              0000 1101
-// STORESP x          010X xxxx
-// NOP                0000 1011
-// PUSHSP             0000 0010
-// ADD                0000 0101
-// STORE              0000 1100
-// PUSHPC             0011 1011
-// POPPC              0000 0100
-//
-//
-////////////////////////////////////////
-//
-// BREAKPOINT         0000 0000
-//
-// POP                0101 0000
-// POPDOWN            0101 0001
-//
-// LOADSP x           011X xxxx
-// DUP                0111 0000
-// DUPSTACKB          0111 0001
-// ADDSP x            0001 xxxx
-// SHIFT              0001 0000
-// ADDTOP             0001 0001
-// EMULATE x          001x xxxx
-// LOAD               0000 1000
-// AND                0000 0110
-// OR                 0000 0111
-// NOT                0000 1001
-// FLIP               0000 1010
-// LOADH              0010 0010
-// STOREH             0010 0011
-// LESSTHAN           0010 0100
-// LESSTHANOREQUAL    0010 0101
-// ULESSTHAN          0010 0110
-// ULESSTHANOREQUAL   0010 0111
-// MULT               0010 1001
-// LSHIFTRIGHT        0010 1010
-// ASHIFTLEFT         0010 1011
-// ASHIFTRIGHT        0010 1100
-// CALL               0010 1101
-// EQ                 0010 1110
-// NEQ                0010 1111
-// NEG                0011 0000
-// SUB                0011 0001
-// XOR                0011 0010
-// LOADB              0011 0011
-// STOREB             0011 0100
-// DIV                0011 0101
-// MOD                0011 0110
-// EQBRANCH           0011 0111
-// NEQBRANCH          0011 1000
-// POPPCREL           0011 1001
-// HALFMULT           0011 1110
-// CALLPCREL          0011 1111
-
-
 #define MEM_SIZE    16*1024*1025     // 16Mb should be enough...
 struct {
     unsigned char  *memVal;    // encoded value in memory
@@ -158,8 +99,25 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         }
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"ADDSP")) {
+        if ( isInteger(operand) ) {
+            tmp                         = atoi(operand) & 0x0f;
+            machineCode                 = 0x40 | tmp ^ 0x10;
+            memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+            memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+            goto couldFinal;
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
     if (0==strcmp(mnemonic,"NOP")) {
         machineCode                 = 0x0b;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"BREAK")) {
+        machineCode                 = 0x00;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
         goto couldFinal;
@@ -195,6 +153,268 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     if (0==strcmp(mnemonic,"POPPC")) {
         machineCode                 = 0x04;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"POP")) {
+        machineCode                 = 0x50;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"POPDOWN")) {
+        machineCode                 = 0x51;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LOADSP")) {
+        if ( isInteger(operand) ) {
+            tmp                         = atoi(operand) & 0x1f;
+            machineCode                 = 0x60 | tmp ^ 0x10;
+            memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+            memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+            goto couldFinal;
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"DUP")) {
+        machineCode                 = 0x70;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"DUPSTACKB")) {
+        machineCode                 = 0x71;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"SHIFT")) {
+        machineCode                 = 0x10;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"ADDTOP")) {
+        machineCode                 = 0x11;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LOAD")) {
+        machineCode                 = 0x08;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"AND")) {
+        machineCode                 = 0x06;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"OR")) {
+        machineCode                 = 0x07;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"NOT")) {
+        machineCode                 = 0x09;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"FLIP")) {
+        machineCode                 = 0x0a;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LOADH")) {
+        machineCode                 = 0x22;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"STOREH")) {
+        machineCode                 = 0x23;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LESSTHAN")) {
+        machineCode                 = 0x24;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LESSTHANOREQUAL")) {
+        machineCode                 = 0x25;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"ULESSTHAN")) {
+        machineCode                 = 0x26;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"ULESSTHANOREQUAL")) {
+        machineCode                 = 0x27;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"MULT")) {
+        machineCode                 = 0x29;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LSHIFTRIGHT")) {
+        machineCode                 = 0x2a;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"ASHIFTLEFT")) {
+        machineCode                 = 0x2b;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"ASHIFTRIGHT")) {
+        machineCode                 = 0x2c;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"CALL")) {
+        machineCode                 = 0x2d;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"EQ")) {
+        machineCode                 = 0x2e;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"NEQ")) {
+        machineCode                 = 0x2f;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"NEG")) {
+        machineCode                 = 0x30;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"SUB")) {
+        machineCode                 = 0x31;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"XOR")) {
+        machineCode                 = 0x32;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"LOADB")) {
+        machineCode                 = 0x33;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"STOREB")) {
+        machineCode                 = 0x56;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"DIV")) {
+        machineCode                 = 0x35;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"MOD")) {
+        machineCode                 = 0x36;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"EQBRANCH")) {
+        machineCode                 = 0x37;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"NEQBRANCH")) {
+        machineCode                 = 0x38;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"POPPCREL")) {
+        machineCode                 = 0x39;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"HALFMULT")) {
+        machineCode                 = 0x3e;
+        memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
+        memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
+        goto couldFinal;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    if (0==strcmp(mnemonic,"CALLPCREL")) {
+        machineCode                 = 0x3f;
         memoryLayout.final[memPos]  = 1;             // could finalize the encoding...
         memoryLayout.memVal[memPos] = machineCode;   // encoded mnemonic
         goto couldFinal;
