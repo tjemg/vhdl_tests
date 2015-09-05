@@ -9,7 +9,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MEM_SIZE    16*1024*1025     // 16Mb should be enough...
+#define MEM_SIZE    1*1024*1025     // 1Mb should be enough... for now...
+#define DEBUG       0
+
 struct {
     unsigned char  *memVal;    // encoded value in memory
     char           *final;     // =0 final value, =1 needs further processing
@@ -51,9 +53,45 @@ int isInteger( char *str ){
     return 1;
 }
 
+long long getLabel( char *lbl ) {
+    int ii;
+    for (ii=0; ii<MEM_SIZE; ii++) {
+        if ( (0!=memoryLayout.instLabel[ii]) && (0==strcmp(lbl,memoryLayout.instLabel[ii])) ) {
+            return ii;
+        }
+    }
+    return -1;
+}
+
+int loadIM32( unsigned long memPos, long value ){
+    int ii;
+    unsigned char values8[5];
+
+    for (ii=0; ii<5; ii++) {
+        values8[ii] = value & 0x7f;
+        value = value >> 7;
+    }
+    for (ii=0; ii<5; ii++) {
+        memoryLayout.memVal[memPos]     = values8[4-ii] | 0x80;
+        memoryLayout.final[memPos]      = 1;
+        memoryLayout.populated[memPos]  = 1;
+        memoryLayout.mnemonic[memPos]   = (char *)malloc(10);
+        sprintf(memoryLayout.mnemonic[memPos],"IM %d",values8[4-ii]);
+        if (NULL!=memoryLayout.operand[memPos]) {
+            sprintf(memoryLayout.operand[memPos],"");
+        } else {
+            memoryLayout.operand[memPos] = (char *)malloc(2);
+            sprintf(memoryLayout.operand[memPos],"");
+        }
+        memPos++;
+    }
+    return 5;
+}
+
 int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
     int           encLen = 1;
     int           tmp;
+    long long     immediateVal;
     unsigned char machineCode;
 
     memoryLayout.mnemonic[memPos] = (char *)malloc(1+sizeof(mnemonic));
@@ -61,7 +99,34 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
     memoryLayout.operand[memPos] = (char *)malloc(1+sizeof(operand));
     strcpy( memoryLayout.operand[memPos], operand);
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //*************************************************************************************************
+    if (0==strcmp(mnemonic,"JMP")) {
+        encLen = 6;
+        if ( isInteger(operand) ) {
+            // cannot finalize encoding
+            goto cannotFinal;
+            //goto couldFinal;
+        } else {
+            if (-1!=(immediateVal=getLabel(operand))) {
+                // now I have the immediate value... so i plug it in...
+                memPos += loadIM32(memPos,immediateVal);
+                machineCode                     = 0x04;      // POPPC
+                memoryLayout.final[memPos]      = 1;         // could finalize the encoding...
+                memoryLayout.populated[memPos]  = 1;         // inserter instruction
+                memoryLayout.memVal[memPos]     = machineCode;   // encoded mnemonic
+                memoryLayout.mnemonic[memPos]   = (char *)malloc(6);
+                memoryLayout.operand[memPos]    = (char *)malloc(2);
+                sprintf(memoryLayout.mnemonic[memPos],"POPPC");
+                sprintf(memoryLayout.operand[memPos],"");
+                goto couldFinal;
+            } else {
+                // cannot finalize encoding
+                printf("B\n");
+                goto cannotFinal;
+            }
+        }
+    }
+    //*************************************************************************************************
     if (0==strcmp(mnemonic,"IM")) {
         if ( isInteger(operand) ) {
             tmp                         = atoi(operand) & 0x7f;
@@ -427,7 +492,6 @@ cannotFinal:
 couldFinal:
     memoryLayout.final[memPos] = 1;   // could finalize the encoding...
     return encLen;
-
 }
 
 int main( int argc, char **argv ) {
@@ -523,7 +587,9 @@ int main( int argc, char **argv ) {
         }
 
         if ( (0==strcmp(label,"")) && (0==strcmp(mnemonic,"")) ) { continue; }
-//        printf("<MEM: 0x%04x> <LBL: '%10s'>  <MNM: '%15s'>  <OP: '%5s'>\n", memCnt, label, mnemonic, operand);
+#if (1==DEBUG)
+        printf("<MEM: 0x%04x> <LBL: '%10s'>  <MNM: '%15s'>  <OP: '%5s'>\n", memCnt, label, mnemonic, operand);
+#endif
 
         if (0!=strcmp(label,"")) {
             tmp = (char *)malloc(1+strlen(label));
@@ -608,7 +674,7 @@ doneCompiling:
         printf("\n");
         printf("signal ram : ram_type := (\n");
 
-        for (ii=0; ii<(1+maxMem>>2); ii++) {
+        for (ii=0; ii<(1+(maxMem>>2)); ii++) {
             printf("%6d => x\"%02x%02x%02x%02x\",\n", ii, memoryLayout.memVal[4*ii+0],
                                                           memoryLayout.memVal[4*ii+1],
                                                           memoryLayout.memVal[4*ii+2],
