@@ -127,6 +127,42 @@ int encodeMnemonic( unsigned long memPos, char *mnemonic, char *operand ){
         }
     }
     //*************************************************************************************************
+    if (0==strcmp(mnemonic,"CALL")) {
+        encLen = 7;
+        if ( isInteger(operand) ) {
+            // cannot finalize encoding
+            goto cannotFinal;
+            //goto couldFinal;
+        } else {
+            if (-1!=(immediateVal=getLabel(operand))) {
+                // now I have the immediate value... so i plug it in...
+                machineCode                     = 0x3b;      // PUSHPC
+                memoryLayout.final[memPos]      = 1;         // could finalize the encoding...
+                memoryLayout.populated[memPos]  = 1;         // inserter instruction
+                memoryLayout.memVal[memPos]     = machineCode;   // encoded mnemonic
+                memoryLayout.mnemonic[memPos]   = (char *)malloc(7);
+                memoryLayout.operand[memPos]    = (char *)malloc(2);
+                sprintf(memoryLayout.mnemonic[memPos],"PUSHPC");
+                sprintf(memoryLayout.operand[memPos],"");
+                memPos++;
+                memPos += loadIM32(memPos,immediateVal);
+                machineCode                     = 0x04;      // POPPC
+                memoryLayout.final[memPos]      = 1;         // could finalize the encoding...
+                memoryLayout.populated[memPos]  = 1;         // inserter instruction
+                memoryLayout.memVal[memPos]     = machineCode;   // encoded mnemonic
+                memoryLayout.mnemonic[memPos]   = (char *)malloc(6);
+                memoryLayout.operand[memPos]    = (char *)malloc(2);
+                sprintf(memoryLayout.mnemonic[memPos],"POPPC");
+                sprintf(memoryLayout.operand[memPos],"");
+                goto couldFinal;
+            } else {
+                // cannot finalize encoding
+                printf("B\n");
+                goto cannotFinal;
+            }
+        }
+    }
+    //*************************************************************************************************
     if (0==strcmp(mnemonic,"IM")) {
         if ( isInteger(operand) ) {
             tmp                         = atoi(operand) & 0x7f;
