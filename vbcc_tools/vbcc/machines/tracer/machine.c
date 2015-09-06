@@ -273,6 +273,7 @@ void opASSIGN( FILE *f, struct IC *p ) {
     }
     UNHANDLED_CASE("ASSIGN ? -> ?");
 }
+
 // Operation  : ADD
 // Description: q1+q2 -> z
 void opADD( FILE *f, struct IC *p ) {
@@ -302,16 +303,62 @@ void opADD( FILE *f, struct IC *p ) {
     if ( (VAR==q1->flags) && (VAR==q2->flags) && (VAR==z->flags) ){
         // TODO optimize in case of small offsets (use STORESP, LOADSP, ADDSP, etc...)
         //  STACK IMAGE                                   | [SP-8]     | [SP-4]     | [SP] | 
-        //                                           SP   |            |            | (?)  |  we add 4 here since we wish to load v2_addr into stack
-        emit(f,"\tIM %d\n",(q2->v->offset+4)/4);  // SP-4 |            | (v2_x)     |  ?   |  we add 4 here since we wish to load v2_addr into stack
-        emit(f,"\tPUSHSPADD\n");                  // SP-4 |            | (v2_addr)  |  ?   |  add SP-4 + (v2_o+4) = SP + v2_o = v2_addr
-        emit(f,"\tLOAD\n");                       // SP-4 |            | (*v2_addr) |  ?   |  this loads TOS = *v2_addr
-        emit(f,"\tIM %d\n",(q1->v->offset+8)/4);  // SP-8 | (v1_x)     |  *v2_addr  |  ?   |  we add 8 here sinwe we wish to load v1_addr into stack
-        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (v1_addr)  |  *v2_addr  |  ?   |  add SP-8 + (v1_o+8) = SP + v1_o = v1_addr
-        emit(f,"\tLOAD\n");                       // SP-8 | (*v1_addr) |  *v2_addr  |  ?   |  this loads TOS = *v1_addr
+        //                                           SP   |            |            | (?)  |  we add 4 here since we wish to load v1_addr into stack
+        emit(f,"\tIM %d\n",(q1->v->offset+4)/4);  // SP-4 |            | (v1_x)     |  ?   |  we add 4 here since we wish to load v1_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-4 |            | (v1_addr)  |  ?   |  add SP-4 + (v2_o+4) = SP + v1_o = v1_addr
+        emit(f,"\tLOAD\n");                       // SP-4 |            | (*v1_addr) |  ?   |  this loads TOS = *v1_addr
+        emit(f,"\tIM %d\n",(q2->v->offset+8)/4);  // SP-8 | (v2_x)     |  *v1_addr  |  ?   |  we add 8 here sinwe we wish to load v2_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (v2_addr)  |  *v1_addr  |  ?   |  add SP-8 + (v2_o+8) = SP + v2_o = v2_addr
+        emit(f,"\tLOAD\n");                       // SP-8 | (*v2_addr) |  *v1_addr  |  ?   |  this loads TOS = *v2_addr
         emit(f,"\tADD\n");                        // SP-4 |            |   (SUM)    |  ?   |  add the two values
         emit(f,"\tIM %d\n",(z->v->offset+8)/4);   // SP-8 | (vz_x)     |    SUM     |  ?   |  load vz_x
         emit(f,"\tPUSHSPADD\n");                  // SP-8 | (vz_addr)  |    SUM     |  ?   |  now TOS = vz_addr
+        emit(f,"\tSTORE\n");                      // SP   |            |            | (?)  |  STORE pops two values A=mem, B=val
+        emit(f,"\n");
+        return;
+    }
+    UNHANDLED_CASE("ADD ? -> ?");
+}
+
+// Operation  : SUB
+// Description: q1-q2 -> z
+void opSUB( FILE *f, struct IC *p ) {
+    struct obj *q1 = &p->q1;
+    struct obj *q2 = &p->q2;
+    struct obj *z  = &p->z;
+
+    printf("SUB: (lin:%.4d) src1: %s\n", p->line, objType(q1->flags));
+    printf("                src2: %s\n", objType(q2->flags));
+    printf("                 dst: %s"  , objType(z->flags));
+    printf("\n");
+    printf("INFO SRC_1:\n");
+    if (KONST==(KONST&q1->flags)) {
+        printf("   const:%d\n", q1->val.vint );
+    }
+    if (q1->v) { printVar(q1->v); }
+    printf("INFO SRC_2:\n");
+    if (KONST==(KONST&q2->flags)) {
+        printf("   const:%d\n", q2->val.vint );
+    }
+    if (q2->v) { printVar(q2->v); }
+    printf("INFO DST:\n");
+    if (z->v) { printVar(z->v); }
+    printf("\n\n");
+    
+    // VAR, VAR -> VAR
+    if ( (VAR==q1->flags) && (VAR==q2->flags) && (VAR==z->flags) ){
+        // TODO optimize in case of small offsets (use STORESP, LOADSP, ADDSP, etc...)
+        //  STACK IMAGE                                   | [SP-8]     | [SP-4]     | [SP] | 
+        //                                           SP   |            |            | (?)  |  we add 4 here since we wish to load v1_addr into stack
+        emit(f,"\tIM %d\n",(q1->v->offset+4)/4);  // SP-4 |            | (v1_x)     |  ?   |  we add 4 here since we wish to load v1_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-4 |            | (v1_addr)  |  ?   |  add SP-4 + (v1_o+4) = SP + v1_o = v1_addr
+        emit(f,"\tLOAD\n");                       // SP-4 |            | (*v1_addr) |  ?   |  this loads TOS = *v1_addr
+        emit(f,"\tIM %d\n",(q2->v->offset+8)/4);  // SP-8 | (v2_x)     |  *v1_addr  |  ?   |  we add 8 here since we wish to load v2_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (v2_addr)  |  *v1_addr  |  ?   |  add SP-8 + (v2_o+8) = SP + v2_o = v2_addr
+        emit(f,"\tLOAD\n");                       // SP-8 | (*v2_addr) |  *v1_addr  |  ?   |  this loads TOS = *v2_addr
+        emit(f,"\tSUB\n");                        // SP-4 |            |   (DIF)    |  ?   |  add the two values
+        emit(f,"\tIM %d\n",(z->v->offset+8)/4);   // SP-8 | (vz_x)     |    DIF     |  ?   |  load vz_x
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (vz_addr)  |    DIF     |  ?   |  now TOS = vz_addr
         emit(f,"\tSTORE\n");                      // SP   |            |            | (?)  |  STORE pops two values A=mem, B=val
         emit(f,"\n");
         return;
@@ -546,7 +593,7 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (LSHIFT==c)       { printf("LSHIFT\n");       }
         if (RSHIFT==c)       { printf("RSHIFT\n");       }
         if (ADD==c)          { opADD(f,p);               }
-        if (SUB==c)          { printf("SUB\n");          }
+        if (SUB==c)          { opSUB(f,p);               }
         if (MULT==c)         { printf("MULT\n");         }
         if (DIV==c)          { printf("DIV\n");          }
         if (MOD==c)          { printf("MOD\n");          }
