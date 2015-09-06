@@ -80,7 +80,7 @@ int loadIM32( unsigned long memPos, long value ){
         memoryLayout.populated[memPos]  = 1;
         memoryLayout.mnemonic[memPos]   = (char *)malloc(10);
         if (flagPositive) {
-            sprintf(memoryLayout.mnemonic[memPos],"IM %d",0xff & values8[4-ii]);
+            sprintf(memoryLayout.mnemonic[memPos],"IM %d",0x7f & values8[4-ii]);
         } else {
             sprintf(memoryLayout.mnemonic[memPos],"IM %d",values8[4-ii]);
         }

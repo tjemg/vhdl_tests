@@ -1,5 +1,6 @@
 ZPUCCDIR = /opt/zpugcc
 ZPUCORE  = zpu_core.vhd
+ZPUCCOPT = -O4
 FLAGS    = --ieee=synopsys
 TARGET   = sim_fpga_top
 DEVICE   = xc2s300e-6-pq208
@@ -16,10 +17,10 @@ all: $(OBJECTS) prog_ram.o
 	ghdl -e $(FLAGS) $(TARGET)
 
 ram: zpuramgen
-	$(ZPUCCDIR)/bin/zpu-elf-gcc -o $(MAIN).elf crt0_phi.S $(MAIN).c -phi -Wl,--gc-sections -Os -abel -Wl,--relax -nostdlib
+	$(ZPUCCDIR)/bin/zpu-elf-gcc -o $(MAIN).elf crt0_phi.S $(MAIN).c -phi -Wl,--gc-sections -abel -Wl,--relax -nostdlib $(ZPUCCOPT)
 	$(ZPUCCDIR)/bin/zpu-elf-objdump --disassemble-all $(MAIN).elf > $(MAIN).dis
 	$(ZPUCCDIR)/bin/zpu-elf-objcopy -O binary $(MAIN).elf $(MAIN).bin
-	./zpuramgen $(MAIN).bin > prog_ram.vhd
+	#./zpuramgen $(MAIN).bin > prog_ram.vhd
 	chmod -x $(MAIN).bin
 	chmod -x $(MAIN).elf
 
@@ -68,7 +69,7 @@ clean:
 	rm -rf *.dis
 	rm -rf *.ram
 	rm -rf *.bin
-	rm -rf prog_ram.vhd
+#	rm -rf prog_ram.vhd
 	rm -rf log.txt
 	rm -rf trace.txt
 	rm -rf $(TARGET)

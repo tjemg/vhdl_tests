@@ -98,6 +98,15 @@ static char *idprefix="_";
 static char *sdt[MAX_TYPE+1] = {"??","c","s","i","l","ll","f","d","ld","v","p"};
 static char *udt[MAX_TYPE+1] = {"??","uc","us","ui","ul","ull","f","d","ld","v","p"};
 
+// represents the currently offset to the original SP at the function begin
+// shall be used to compute stack offsets when accessing local variables
+// because those offsets depend on how much data was previously pushed onto the
+// stack before.
+// NOTE: this shall be used later for optimization strategy
+//       currently, every Intermediate Code instruction is implemented such that
+//       the stack shall be cleared at the end of each IC
+long globalFunctionOffset = 0;
+
 // #########################################################################################################################
 // #                                                 PRIVATE FUNCTIONS                                                     #
 // #########################################################################################################################
@@ -130,9 +139,9 @@ void functionPreamble( FILE *f, struct IC *p, struct Var *v, zmax offset) {
     
     printf("Generate Function Preamble (required stack-space = %d bytes)\n", reqStackSpace);
     emit(f,"%s%s:\n", idprefix, v->identifier);  // function label
-    emit(f,"\tIM %d\n", -reqStackSpace/4);
-    emit(f,"\tPUSHSPADD\n", -reqStackSpace/4);
-    emit(f,"\tPOPSP\n", -reqStackSpace/4);
+    emit(f,"\tIM %d\n", (-reqStackSpace + 4)/4); // [SP]   +4 because this function decreases SP by 4
+    emit(f,"\tPUSHSPADD\n" );                    // [SP-4] since we added 4 before, the net-effect is (SP-4) + (-r+4) = SP-r
+    emit(f,"\tPOPSP\n");                         // [SP-r] now, we pop SP which means we make it = to SP-r as desired
     emit(f,"\n");
 }
 
@@ -158,6 +167,25 @@ void printVar( struct Var *v ) {
         // offset contains the offset inside the local-variables section
         printf("             offset = %d\n", v->offset);
     }
+    printf("                   = ");
+    if ( USEDASSOURCE == (USEDASSOURCE & v->flags)   ) { printf("USEDASSOURCE ");  }
+    if ( USEDASDEST == (USEDASDEST & v->flags)       ) { printf("USEDASDEST ");    }
+    if ( DEFINED == (DEFINED & v->flags)             ) { printf("DEFINED ");       }
+    if ( USEDASADR == (USEDASADR & v->flags)         ) { printf("USEDASADR ");     }
+    if ( GENERATED == (GENERATED & v->flags)         ) { printf("GENERATED ");     }
+    if ( CONVPARAMETER == (CONVPARAMETER & v->flags) ) { printf("CONVPARAMETER "); }
+    if ( TENTATIVE == (TENTATIVE & v->flags)         ) { printf("TENTATIVE ");     }
+    if ( USEDBEFORE == (USEDBEFORE & v->flags)       ) { printf("USEDBEFORE ");    }
+    if ( INLINEV == (INLINEV & v->flags)             ) { printf("INLINEV ");       }
+    if ( PRINTFLIKE == (PRINTFLIKE & v->flags)       ) { printf("PRINTFLIKE ");    }
+    if ( SCANFLIKE == (SCANFLIKE & v->flags)         ) { printf("SCANFLIKE ");     }
+    if ( NOTTYPESAFE == (NOTTYPESAFE & v->flags)     ) { printf("NOTTYPESAFE ");   }
+    if ( DNOTTYPESAFE == (DNOTTYPESAFE & v->flags)   ) { printf("DNOTTYPESAFE ");  }
+    if ( REGPARM == (REGPARM & v->flags)             ) { printf("REGPARM ");       }
+    if ( DBLPUSH == (DBLPUSH & v->flags)             ) { printf("DBLPUSH ");       }
+    if ( NOTINTU == (NOTINTU & v->flags)             ) { printf("NOTINTU ");       }
+    if ( REFERENCED == (REFERENCED & v->flags)       ) { printf("REFERENCED ");    }
+    printf("\n");
 }
 
 
@@ -186,15 +214,14 @@ void loadInt( FILE *f, int val ){
         if (ii!=4) {
             if ( (values[ii]!=values[ii+1]) && !((-1==values[ii] && 0x80==(values[ii+1]&0x80)) || (0==values[ii] && 0x00==(values[ii+1]&0x80))) ) {
                 if (flagPositive) {
-                    emit(f,"\tIM %d\n",0xff & values[ii]);
+                    emit(f,"\tIM %d\n",0x7f & values[ii]);
                 } else {
                     emit(f,"\tIM %d\n",(signed int)values[ii]);
                 }
             }
         } else {
-            //printf(" %d", (signed int)values[ii]);
             if (flagPositive) {
-                emit(f,"\tIM %d  ;  %d  (0x%.08x)\n", 0xff & values[ii], val, val);
+                emit(f,"\tIM %d  ;  %d  (0x%.08x)\n", 0x7f & values[ii], val, val);
             } else {
                 emit(f,"\tIM %d  ;  %d  (0x%.08x)\n",(signed int)values[ii], val, val);
             }
@@ -226,26 +253,70 @@ void opASSIGN( FILE *f, struct IC *p ) {
         if ( (VAR==z->flags) && (AUTO == z->v->storage_class) ) {
             // variable is located in stack
 	    printf("CONST -> STACK\n");
-	    loadInt(f,q1->val.vint);
-            emit(f,"\tSTORESP %d\n", z->v->offset);
+	    loadInt(f,q1->val.vint);                       // [SP-4] q1.val
+            emit(f,"\tSTORESP %d\n", (z->v->offset+4)/4);  // we need to add 4 since there is one value on the stack
             emit(f,"\n");
 	    return;
         }
         if ( (DREFOBJ==(DREFOBJ&z->flags)) && (AUTO == z->v->storage_class) ) {
             // variable needs to be dereferenced
-	    printf("CONST -> *\n");
-	    loadInt(f,q1->val.vint);
-            emit(f,"\tNOP\n");
-	    loadInt(f,z->v->offset);
-            emit(f,"\tPUSHSP\n");
-            emit(f,"\tADD\n");
-            emit(f,"\tSTORE\n");
+            loadInt(f,q1->val.vint);    // [SP-4]:q1.val
+            emit(f,"\tNOP\n");          // [SP-4]:
+	    loadInt(f,z->v->offset+8);  // [SP-8]: 8+z.ofs,  [SP-4]: q1.val
+            emit(f,"\tPUSHSP\n");       // [SP-12]: SP-8,    [SP-8] 8+z.ofs, [SP-4]: q1.val
+            emit(f,"\tADD\n");          // [SP-8]: SP+z.ofs, [SP-4]: q1.val
+            emit(f,"\tSTORE\n");        // -
             emit(f,"\n");
 	    return;
         }
         UNHANDLED_CASE("ASSIGN KONST -> ?");
     }
     UNHANDLED_CASE("ASSIGN ? -> ?");
+}
+// Operation  : ADD
+// Description: q1+q2 -> z
+void opADD( FILE *f, struct IC *p ) {
+    struct obj *q1 = &p->q1;
+    struct obj *q2 = &p->q2;
+    struct obj *z  = &p->z;
+
+    printf("ADD: (lin:%.4d) src1: %s\n", p->line, objType(q1->flags));
+    printf("                src2: %s\n", objType(q2->flags));
+    printf("                 dst: %s"  , objType(z->flags));
+    printf("\n");
+    printf("INFO SRC_1:\n");
+    if (KONST==(KONST&q1->flags)) {
+        printf("   const:%d\n", q1->val.vint );
+    }
+    if (q1->v) { printVar(q1->v); }
+    printf("INFO SRC_2:\n");
+    if (KONST==(KONST&q2->flags)) {
+        printf("   const:%d\n", q2->val.vint );
+    }
+    if (q2->v) { printVar(q2->v); }
+    printf("INFO DST:\n");
+    if (z->v) { printVar(z->v); }
+    printf("\n\n");
+    
+    // VAR, VAR -> VAR
+    if ( (VAR==q1->flags) && (VAR==q2->flags) && (VAR==z->flags) ){
+        // TODO optimize in case of small offsets (use STORESP, LOADSP, ADDSP, etc...)
+        //  STACK IMAGE                                   | [SP-8]     | [SP-4]     | [SP] | 
+        //                                           SP   |            |            | (?)  |  we add 4 here since we wish to load v2_addr into stack
+        emit(f,"\tIM %d\n",(q2->v->offset+4)/4);  // SP-4 |            | (v2_x)     |  ?   |  we add 4 here since we wish to load v2_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-4 |            | (v2_addr)  |  ?   |  add SP-4 + (v2_o+4) = SP + v2_o = v2_addr
+        emit(f,"\tLOAD\n");                       // SP-4 |            | (*v2_addr) |  ?   |  this loads TOS = *v2_addr
+        emit(f,"\tIM %d\n",(q1->v->offset+8)/4);  // SP-8 | (v1_x)     |  *v2_addr  |  ?   |  we add 8 here sinwe we wish to load v1_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (v1_addr)  |  *v2_addr  |  ?   |  add SP-8 + (v1_o+8) = SP + v1_o = v1_addr
+        emit(f,"\tLOAD\n");                       // SP-8 | (*v1_addr) |  *v2_addr  |  ?   |  this loads TOS = *v1_addr
+        emit(f,"\tADD\n");                        // SP-4 |            |   (SUM)    |  ?   |  add the two values
+        emit(f,"\tIM %d\n",(z->v->offset+8)/4);   // SP-8 | (vz_x)     |    SUM     |  ?   |  load vz_x
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (vz_addr)  |    SUM     |  ?   |  now TOS = vz_addr
+        emit(f,"\tSTORE\n");                      // SP   |            |            | (?)  |  STORE pops two values A=mem, B=val
+        emit(f,"\n");
+        return;
+    }
+    UNHANDLED_CASE("ADD ? -> ?");
 }
 
 
@@ -474,7 +545,7 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (GREATEREQ==c)    { printf("GREATEREQ\n");    }
         if (LSHIFT==c)       { printf("LSHIFT\n");       }
         if (RSHIFT==c)       { printf("RSHIFT\n");       }
-        if (ADD==c)          { printf("ADD\n");          }
+        if (ADD==c)          { opADD(f,p);               }
         if (SUB==c)          { printf("SUB\n");          }
         if (MULT==c)         { printf("MULT\n");         }
         if (DIV==c)          { printf("DIV\n");          }

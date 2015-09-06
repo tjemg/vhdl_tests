@@ -978,6 +978,7 @@ begin
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   pc                               <= pc + 1;                   -- next instruction
+                                  sp                               <= decSp;                    -- decrement SP (because we push to stack)
                                   stackA                           <= (others => '0');          -- make sure other bits of stackA are set to '0'
                                   stackA(maxAddrBitIncIO downto 0) <= pc;                       -- new stackA = PC
                                   stackB                           <= stackA;                   -- new stackB is now stackA
