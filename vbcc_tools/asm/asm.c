@@ -64,8 +64,11 @@ long long getLabel( char *lbl ) {
 }
 
 int loadIM32( unsigned long memPos, long value ){
-    int ii;
+    int           ii;
     unsigned char values8[5];
+    int           flagPositive;
+
+    flagPositive = (value>0) ? 1 : 0;
 
     for (ii=0; ii<5; ii++) {
         values8[ii] = value & 0x7f;
@@ -76,7 +79,11 @@ int loadIM32( unsigned long memPos, long value ){
         memoryLayout.final[memPos]      = 1;
         memoryLayout.populated[memPos]  = 1;
         memoryLayout.mnemonic[memPos]   = (char *)malloc(10);
-        sprintf(memoryLayout.mnemonic[memPos],"IM %d",values8[4-ii]);
+        if (flagPositive) {
+            sprintf(memoryLayout.mnemonic[memPos],"IM %d",0xff & values8[4-ii]);
+        } else {
+            sprintf(memoryLayout.mnemonic[memPos],"IM %d",values8[4-ii]);
+        }
         if (NULL!=memoryLayout.operand[memPos]) {
             sprintf(memoryLayout.operand[memPos],"");
         } else {

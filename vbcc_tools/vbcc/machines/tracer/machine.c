@@ -171,6 +171,9 @@ void loadInt( FILE *f, int val ){
     signed char  val7;
     signed char  values[5];
     int          ii;
+    int          flagPositive;
+
+    flagPositive = (val>0) ? 1 : 0;
 
     for (ii=0; ii<5; ii++) {
          values[4-ii] = remainder & 0x7f;
@@ -182,12 +185,19 @@ void loadInt( FILE *f, int val ){
     for (ii=0; ii<5; ii++) {
         if (ii!=4) {
             if ( (values[ii]!=values[ii+1]) && !((-1==values[ii] && 0x80==(values[ii+1]&0x80)) || (0==values[ii] && 0x00==(values[ii+1]&0x80))) ) {
-                //printf(" %d", (signed int)values[ii]);
-                emit(f,"\tIM %d\n",(signed int)values[ii]);
+                if (flagPositive) {
+                    emit(f,"\tIM %d\n",0xff & values[ii]);
+                } else {
+                    emit(f,"\tIM %d\n",(signed int)values[ii]);
+                }
             }
         } else {
             //printf(" %d", (signed int)values[ii]);
-            emit(f,"\tIM %d  ;  %d  (0x%.08x)\n",(signed int)values[ii], val, val);
+            if (flagPositive) {
+                emit(f,"\tIM %d  ;  %d  (0x%.08x)\n", 0xff & values[ii], val, val);
+            } else {
+                emit(f,"\tIM %d  ;  %d  (0x%.08x)\n",(signed int)values[ii], val, val);
+            }
         }
     }
     printf("\n");
