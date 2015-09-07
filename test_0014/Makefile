@@ -12,6 +12,7 @@ SOURCES  = zpu_config.vhd     \
            sim_fpga_top.vhd
 OBJECTS  = $(subst .vhd,.o,$(SOURCES))
 MAIN     = main
+SIM_TIME = 5us
 
 all: $(OBJECTS) prog_ram.o
 	ghdl -e $(FLAGS) $(TARGET)
@@ -34,8 +35,7 @@ prog_ram.o: ram
 	ghdl -a $(FLAGS) prog_ram.vhd
 
 run:
-#	ghdl -r $(TARGET) --wave=test.ghw --stop-time=1ms
-	ghdl -r $(TARGET) --wave=test.ghw --stop-time=4us
+	ghdl -r $(TARGET) --wave=test.ghw --stop-time=$(SIM_TIME)
 
 bit:
 	rm -rf build
