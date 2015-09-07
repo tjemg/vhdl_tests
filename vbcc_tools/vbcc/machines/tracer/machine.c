@@ -167,7 +167,7 @@ void printVar( struct Var *v ) {
         // offset contains the offset inside the local-variables section
         printf("             offset = %d\n", v->offset);
     }
-    printf("                   = ");
+    printf("            v.flags = ");
     if ( USEDASSOURCE == (USEDASSOURCE & v->flags)   ) { printf("USEDASSOURCE ");  }
     if ( USEDASDEST == (USEDASDEST & v->flags)       ) { printf("USEDASDEST ");    }
     if ( DEFINED == (DEFINED & v->flags)             ) { printf("DEFINED ");       }
@@ -186,6 +186,36 @@ void printVar( struct Var *v ) {
     if ( NOTINTU == (NOTINTU & v->flags)             ) { printf("NOTINTU ");       }
     if ( REFERENCED == (REFERENCED & v->flags)       ) { printf("REFERENCED ");    }
     printf("\n");
+
+    printf("             v.type = ");
+    if ( CHAR      == ( NQ & v->vtyp->flags) ) { printf("CHAR\n");      }
+    if ( SHORT     == ( NQ & v->vtyp->flags) ) { printf("SHORT\n");     }
+    if ( INT       == ( NQ & v->vtyp->flags) ) { printf("INT\n");       }
+    if ( LONG      == ( NQ & v->vtyp->flags) ) { printf("LONG\n");      }
+    if ( LLONG     == ( NQ & v->vtyp->flags) ) { printf("LLONG\n");     }
+    if ( FLOAT     == ( NQ & v->vtyp->flags) ) { printf("FLOAT\n");     }
+    if ( DOUBLE    == ( NQ & v->vtyp->flags) ) { printf("DOUBLE\n");    }
+    if ( LDOUBLE   == ( NQ & v->vtyp->flags) ) { printf("LDOUBLE\n");   }
+    if ( VOID      == ( NQ & v->vtyp->flags) ) { printf("VOID\n");      }
+    if ( POINTER   == ( NQ & v->vtyp->flags) ) { printf("POINTER\n");   }
+    if ( ARRAY     == ( NQ & v->vtyp->flags) ) { printf("ARRAY\n");     }
+    if ( STRUCT    == ( NQ & v->vtyp->flags) ) { printf("STRUCT\n");    }
+    if ( UNION     == ( NQ & v->vtyp->flags) ) { printf("UNION\n");     }
+    if ( ENUM      == ( NQ & v->vtyp->flags) ) { printf("ENUM\n");      }
+    if ( FUNKT     == ( NQ & v->vtyp->flags) ) { printf("FUNKT\n");     }
+    if ( BOOL      == ( NQ & v->vtyp->flags) ) { printf("BOOL\n");      }
+    if ( MAXINT    == ( NQ & v->vtyp->flags) ) { printf("MAXINT\n");    }
+    if ( MAX_TYPE  == ( NQ & v->vtyp->flags) ) { printf("MAX_TYPE\n");  }
+    if ( MAXVECDIM == ( NQ & v->vtyp->flags) ) { printf("MAXVECDIM\n"); }
+    if ( VECBOOL   == ( NQ & v->vtyp->flags) ) { printf("VECBOOL\n");   }
+    if ( VECCHAR   == ( NQ & v->vtyp->flags) ) { printf("VECCHAR\n");   }
+    if ( VECSHORT  == ( NQ & v->vtyp->flags) ) { printf("VECSHORT\n");  }
+    if ( VECINT    == ( NQ & v->vtyp->flags) ) { printf("VECINT\n");    }
+    if ( VECLONG   == ( NQ & v->vtyp->flags) ) { printf("VECLONG\n");   }
+    if ( VECFLOAT  == ( NQ & v->vtyp->flags) ) { printf("VECFLOAT\n");  }
+    if ( VECLAST   == ( NQ & v->vtyp->flags) ) { printf("VECLAST\n");   }
+    
+    //printf("\n");
 }
 
 
@@ -366,6 +396,84 @@ void opSUB( FILE *f, struct IC *p ) {
     UNHANDLED_CASE("ADD ? -> ?");
 }
 
+
+// Operation  : opStr
+// Description: q1-q2 -> z
+void opString( FILE *f, struct IC *p, const char *opStr ) {
+    struct obj *q1 = &p->q1;
+    struct obj *q2 = &p->q2;
+    struct obj *z  = &p->z;
+
+    printf("%s: (lin:%.4d) src1: %s\n", opStr, p->line, objType(q1->flags));
+    printf("                src2: %s\n", objType(q2->flags));
+    printf("                 dst: %s"  , objType(z->flags));
+    printf("\n");
+    printf("INFO SRC_1:\n");
+    if (KONST==(KONST&q1->flags)) {
+        printf("   const:%d\n", q1->val.vint );
+    }
+    if (q1->v) { printVar(q1->v); }
+    printf("INFO SRC_2:\n");
+    if (KONST==(KONST&q2->flags)) {
+        printf("   const:%d\n", q2->val.vint );
+    }
+    if (q2->v) { printVar(q2->v); }
+    printf("INFO DST:\n");
+    if (z->v) { printVar(z->v); }
+    printf("\n\n");
+    
+    // VAR, VAR -> VAR
+    if ( (VAR==q1->flags) && (VAR==q2->flags) && (VAR==z->flags) ){
+        // TODO optimize in case of small offsets (use STORESP, LOADSP, ADDSP, etc...)
+        //  STACK IMAGE                                   | [SP-8]     | [SP-4]     | [SP] | 
+        //                                           SP   |            |            | (?)  |  we add 4 here since we wish to load v1_addr into stack
+        emit(f,"\tIM %d\n",(q1->v->offset+4)/4);  // SP-4 |            | (v1_x)     |  ?   |  we add 4 here since we wish to load v1_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-4 |            | (v1_addr)  |  ?   |  add SP-4 + (v1_o+4) = SP + v1_o = v1_addr
+        emit(f,"\tLOAD\n");                       // SP-4 |            | (*v1_addr) |  ?   |  this loads TOS = *v1_addr
+        emit(f,"\tIM %d\n",(q2->v->offset+8)/4);  // SP-8 | (v2_x)     |  *v1_addr  |  ?   |  we add 8 here since we wish to load v2_addr into stack
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (v2_addr)  |  *v1_addr  |  ?   |  add SP-8 + (v2_o+8) = SP + v2_o = v2_addr
+        emit(f,"\tLOAD\n");                       // SP-8 | (*v2_addr) |  *v1_addr  |  ?   |  this loads TOS = *v2_addr
+        emit(f,"\t%s\n",opStr);                   // SP-4 |            |    (OP)    |  ?   |  add the two values
+        emit(f,"\tIM %d\n",(z->v->offset+8)/4);   // SP-8 | (vz_x)     |    (OP)    |  ?   |  load vz_x
+        emit(f,"\tPUSHSPADD\n");                  // SP-8 | (vz_addr)  |    (OP)    |  ?   |  now TOS = vz_addr
+        emit(f,"\tSTORE\n");                      // SP   |            |            | (?)  |  STORE pops two values A=mem, B=val
+        emit(f,"\n");
+        return;
+    }
+    UNHANDLED_CASE("ADD ? -> ?");
+}
+
+int computeVarStackLast( struct Var *v ){
+    if (NULL==v) return 0;
+    if (isauto(v->storage_class)!=0) {
+        if ( CHAR      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( SHORT     == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( INT       == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( LONG      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( LLONG     == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( FLOAT     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( DOUBLE    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( LDOUBLE   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VOID      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( POINTER   == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( ARRAY     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( STRUCT    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( UNION     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( ENUM      == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( FUNKT     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( BOOL      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
+        if ( MAXINT    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( MAX_TYPE  == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( MAXVECDIM == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECBOOL   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECCHAR   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECSHORT  == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECINT    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECLONG   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECFLOAT  == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+        if ( VECLAST   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+    }
+}
 
 // #########################################################################################################################
 // #                                            BACKEND REQUIRED FUNCTIONS                                                 #
@@ -559,12 +667,109 @@ void gen_dc( FILE *f, int t, struct const_list *p ) {
 //  The main code-generation routine.  f is the stream the code should be written to.
 //  p is a pointer to a doubly linked list of ICs containing the function body to generate code for.
 //  v is a pointer to the function. offset is the size of the stackframe the function needs for local variables.
+//  unfortunately, offset does not seem to be reliable... I will have to fix this by running once through the
+//  intermediate code and counting the maximum offset + variable size
+#define UPDATE_SSIZE(varName)                \
+    tmp = computeVarStackLast(m->varName.v); \
+    if (tmp>stackSize){                      \
+        stackSize=tmp;                       \
+    }
 void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
     int        c;  // code
     int        t;  // type
     int        i;
-    struct IC *m;
+    struct IC *m = p;
+    zmax       stackSize = 0;
+    int        tmp;
+    
+    
+    for (; m; m=m->next ){
+        c = m->code;
+        t = m->typf;
+	
+        if (KOMMA==c)        {                                                      }
+        if (ASSIGN==c)       { UPDATE_SSIZE(q1);                   UPDATE_SSIZE(z); }
+        if (ASSIGNOP==c)     {                                                      }
+        if (COND==c)         {                                                      }
+        if (LOR==c)          {                                                      }
+        if (LAND==c)         {                                                      }
+        if (OR==c)           { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (XOR==c)          { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (AND==c)          { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (EQUAL==c)        {                                                      }
+        if (INEQUAL==c)      {                                                      }
+        if (LESS==c)         {                                                      }
+        if (LESSEQ==c)       {                                                      }
+        if (GREATER==c)      {                                                      }
+        if (GREATEREQ==c)    {                                                      }
+        if (LSHIFT==c)       {                                                      }
+        if (RSHIFT==c)       {                                                      }
+        if (ADD==c)          { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (SUB==c)          { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (MULT==c)         { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (DIV==c)          { UPDATE_SSIZE(q1); UPDATE_SSIZE(q2); UPDATE_SSIZE(z); }
+        if (MOD==c)          {                                                      }
+        if (NEGATION==c)     {                                                      }
+        if (KOMPLEMENT==c)   {                                                      }
+        if (PREINC==c)       {                                                      }
+        if (POSTINC==c)      {                                                      }
+        if (PREDEC==c)       {                                                      }
+        if (POSTDEC==c)      {                                                      }
+        if (MINUS==c)        {                                                      }
+        if (CONTENT==c)      {                                                      }
+        if (ADDRESS==c)      {                                                      }
+        if (CAST==c)         {                                                      }
+        if (CALL==c)         {                                                      }
+        if (INDEX==c)        {                                                      }
+        if (DPSTRUCT==c)     {                                                      }
+        if (DSTRUCT==c)      {                                                      }
+        if (IDENTIFIER==c)   {                                                      }
+        if (CEXPR==c)        {                                                      }
+        if (STRING==c)       {                                                      }
+        if (MEMBER==c)       {                                                      }
+        if (CONVERT==c)      {                                                      }
+        if (ADDRESSA==c)     {                                                      }
+        if (FIRSTELEMENT==c) {                                                      }
+        if (PMULT==c)        {                                                      }
+        if (ALLOCREG==c)     {                                                      }
+        if (FREEREG==c)      {                                                      }
+        if (PCEXPR==c)       {                                                      }
+        if (TEST==c)         {                                                      }
+        if (LABEL==c)        {                                                      }
+        if (BEQ==c)          {                                                      }
+        if (BNE==c)          {                                                      }
+        if (BLT==c)          {                                                      }
+        if (BGE==c)          {                                                      }
+        if (BLE==c)          {                                                      }
+        if (BGT==c)          {                                                      }
+        if (BRA==c)          {                                                      }
+        if (COMPARE==c)      {                                                      }
+        if (PUSH==c)         {                                                      }
+        if (POP==c)          {                                                      }
+        if (ADDRESSS==c)     {                                                      }
+        if (ADDI2P==c)       {                                                      }
+        if (SUBIFP==c)       {                                                      }
+        if (SUBPFP==c)       {                                                      }
+        if (PUSHREG==c)      {                                                      }
+        if (POPREG==c)       {                                                      }
+        if (POPARGS==c)      {                                                      }
+        if (SAVEREGS==c)     {                                                      }
+        if (RESTOREREGS==c)  {                                                      }
+        if (ILABEL==c)       {                                                      }
+        if (DC==c)           {                                                      }
+        if (ALIGN==c)        {                                                      }
+        if (COLON==c)        {                                                      }
+        if (GETRETURN==c)    {                                                      }
+        if (SETRETURN==c)    {                                                      }
+        if (MOVEFROMREG==c)  {                                                      }
+        if (MOVETOREG==c)    {                                                      }
+        if (NOP==c)          {                                                      }
+        if (BITFIELD==c)     {                                                      }
+        if (LITERAL==c)      {                                                      }
+        if (REINTERPRET==c)  {                                                      }
+    }
 
+    offset = stackSize;
     printf("GEN_CODE : %s%s (%s)\n", idprefix, v->identifier, v->filename);
     printf("var stackframe size = %d\n", offset);
 
@@ -581,9 +786,9 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (COND==c)         { printf("COND\n");         }
         if (LOR==c)          { printf("LOR\n");          }
         if (LAND==c)         { printf("LAND\n");         }
-        if (OR==c)           { printf("OR\n");           }
-        if (XOR==c)          { printf("XOR\n");          }
-        if (AND==c)          { printf("AND\n");          }
+        if (OR==c)           { opString(f,p,"OR");       }
+        if (XOR==c)          { opString(f,p,"XOR");      }
+        if (AND==c)          { opString(f,p,"AND");      }
         if (EQUAL==c)        { printf("EQUAL\n");        }
         if (INEQUAL==c)      { printf("INEQUAL\n");      }
         if (LESS==c)         { printf("LESS\n");         }
@@ -594,8 +799,8 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (RSHIFT==c)       { printf("RSHIFT\n");       }
         if (ADD==c)          { opADD(f,p);               }
         if (SUB==c)          { opSUB(f,p);               }
-        if (MULT==c)         { printf("MULT\n");         }
-        if (DIV==c)          { printf("DIV\n");          }
+        if (MULT==c)         { opString(f,p,"MULT");     }
+        if (DIV==c)          { opString(f,p,"DIV");      }
         if (MOD==c)          { printf("MOD\n");          }
         if (NEGATION==c)     { printf("NEGATION\n");     }
         if (KOMPLEMENT==c)   { printf("KOMPLEMENT\n");   }
