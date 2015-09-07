@@ -443,36 +443,54 @@ void opString( FILE *f, struct IC *p, const char *opStr ) {
     UNHANDLED_CASE("ADD ? -> ?");
 }
 
-int computeVarStackLast( struct Var *v ){
-    if (NULL==v) return 0;
-    if (isauto(v->storage_class)!=0) {
-        if ( CHAR      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( SHORT     == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( INT       == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( LONG      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( LLONG     == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( FLOAT     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( DOUBLE    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( LDOUBLE   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VOID      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( POINTER   == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( ARRAY     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( STRUCT    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( UNION     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( ENUM      == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( FUNKT     == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( BOOL      == ( NQ & v->vtyp->flags) ) { return v->offset+4;                    }
-        if ( MAXINT    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( MAX_TYPE  == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( MAXVECDIM == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECBOOL   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECCHAR   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECSHORT  == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECINT    == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECLONG   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECFLOAT  == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
-        if ( VECLAST   == ( NQ & v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast"); }
+int computeVarStackMinMax( struct obj *o, int minMax ){
+    int r = -1;
+    
+    //printf("computeVarStackMinMax: %s  %d/%d\n", objType(o->flags), o->flags, KONST);
+    if (NULL==o->v) {
+        r = (minMax==1) ? 65535 : 0;
+	goto done;
     }
+    
+    if (KONST == o->flags) {
+        r = (minMax==1) ? 65535 : 0;
+	goto done;
+    }
+
+    if ( (isauto(o->v->storage_class)!=0) && (KONST!=o->flags) ) {
+        if ( CHAR      == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( SHORT     == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( INT       == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( LONG      == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( LLONG     == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( VOID      == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( POINTER   == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( BOOL      == ( NQ & o->v->vtyp->flags) ) { r = (minMax==1) ? o->v->offset : o->v->offset+4; goto done;  }
+        if ( FLOAT     == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( DOUBLE    == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( LDOUBLE   == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( ARRAY     == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( STRUCT    == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( UNION     == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( ENUM      == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( FUNKT     == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( MAXINT    == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( MAX_TYPE  == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( MAXVECDIM == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECBOOL   == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECCHAR   == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECSHORT  == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECINT    == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECLONG   == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECFLOAT  == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+        if ( VECLAST   == ( NQ & o->v->vtyp->flags) ) { UNHANDLED_CASE("computeVarStackLast");         }
+    } else {
+        r = (minMax==1) ? 65535 : 0; goto done;
+    }
+    
+done:
+    //printf("r (%s) = %d\n",(minMax==1) ? "min" : "max", r);
+    return r;
 }
 
 // #########################################################################################################################
@@ -669,17 +687,23 @@ void gen_dc( FILE *f, int t, struct const_list *p ) {
 //  v is a pointer to the function. offset is the size of the stackframe the function needs for local variables.
 //  unfortunately, offset does not seem to be reliable... I will have to fix this by running once through the
 //  intermediate code and counting the maximum offset + variable size
-#define UPDATE_SSIZE(varName)                \
-    tmp = computeVarStackLast(m->varName.v); \
-    if (tmp>stackSize){                      \
-        stackSize=tmp;                       \
+#define UPDATE_SSIZE(varName)                     \
+    tmp = computeVarStackMinMax(&m->varName,0);  \
+    if (tmp>stackSize){                           \
+        stackSize = tmp;                          \
+    }                                             \
+    tmp = computeVarStackMinMax(&m->varName,1);  \
+    if (tmp<stackSizeMin){                        \
+        stackSizeMin = tmp;                       \
     }
+
 void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
     int        c;  // code
     int        t;  // type
     int        i;
     struct IC *m = p;
-    zmax       stackSize = 0;
+    zmax       stackSize    = 0;
+    zmax       stackSizeMin = 65535;
     int        tmp;
     
     
@@ -771,7 +795,8 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
 
     offset = stackSize;
     printf("GEN_CODE : %s%s (%s)\n", idprefix, v->identifier, v->filename);
-    printf("var stackframe size = %d\n", offset);
+    printf("var stackframe size MAX = %d\n", stackSize);
+    printf("var stackframe size MIN = %d\n", stackSizeMin);
 
     // FUNCTION PRE-AMBLE
     printf("Preamble\n");
