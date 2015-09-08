@@ -14,4 +14,6 @@ int main( void ){
     var6 = var1 / var2;
     var4 = var1 * var2;
     var5 = var1 % var2;
+    var6 = -var1;
+    var6 = ~var1;
 }

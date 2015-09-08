@@ -260,6 +260,45 @@ void loadInt( FILE *f, int val ){
     printf("\n");
 }
 
+// Operation  : opString1
+// Description: q1-q2 -> z
+void opString1( FILE *f, struct IC *p, const char *opStr ) {
+    struct obj *q1 = &p->q1;
+    struct obj *z  = &p->z;
+
+    printf("%s: (lin:%.4d) src: %s\n", opStr, p->line, objType(q1->flags));
+    printf("                 dst: %s"  , objType(z->flags));
+    printf("\n");
+    printf("INFO SRC:\n");
+    if (KONST==(KONST&q1->flags)) {
+        printf("   const:%d\n", q1->val.vint );
+    }
+    if (q1->v) { printVar(q1->v); }
+    printf("INFO DST:\n");
+    if (z->v) { printVar(z->v); }
+    printf("\n\n");
+    
+    // VAR, VAR -> VAR
+    if ( (VAR==q1->flags) && (VAR==z->flags) ){
+        // TODO optimize in case of small offsets (use STORESP, LOADSP, ADDSP, etc...)
+        //  STACK IMAGE                                   | [SP-8]     | [SP-4]     | [SP] | 
+        //                                           SP   |            |            | (?)  |  we add 4 here since we wish to load v1_addr into stack
+        //emit(f,"\tIM %d\n",(q1->v->offset+4)/4);  // SP-4 |            | (v1_x)     |  ?   |  we add 4 here since we wish to load v1_addr into stack
+        //emit(f,"\tPUSHSPADD\n");                  // SP-4 |            | (v1_addr)  |  ?   |  add SP-4 + (v1_o+4) = SP + v1_o = v1_addr
+        //emit(f,"\tLOAD\n");                       // SP-4 |            | (*v1_addr) |  ?   |  this loads TOS = *v1_addr
+        //emit(f,"\tIM %d\n",(q2->v->offset+8)/4);  // SP-8 | (v2_x)     |  *v1_addr  |  ?   |  we add 8 here since we wish to load v2_addr into stack
+        //emit(f,"\tPUSHSPADD\n");                  // SP-8 | (v2_addr)  |  *v1_addr  |  ?   |  add SP-8 + (v2_o+8) = SP + v2_o = v2_addr
+        //emit(f,"\tLOAD\n");                       // SP-8 | (*v2_addr) |  *v1_addr  |  ?   |  this loads TOS = *v2_addr
+        //emit(f,"\t%s\n",opStr);                   // SP-4 |            |    (OP)    |  ?   |  add the two values
+        //emit(f,"\tIM %d\n",(z->v->offset+8)/4);   // SP-8 | (vz_x)     |    (OP)    |  ?   |  load vz_x
+        //emit(f,"\tPUSHSPADD\n");                  // SP-8 | (vz_addr)  |    (OP)    |  ?   |  now TOS = vz_addr
+        //emit(f,"\tSTORE\n");                      // SP   |            |            | (?)  |  STORE pops two values A=mem, B=val
+        //emit(f,"\n");
+        return;
+    }
+    UNHANDLED_CASE("opString1 ? -> ?");
+}
+
 // Operation  : ASSIGN
 // Description: Copy q1 to z
 void opASSIGN( FILE *f, struct IC *p ) {
@@ -305,9 +344,9 @@ void opASSIGN( FILE *f, struct IC *p ) {
 }
 
 
-// Operation  : opString
+// Operation  : opString2
 // Description: q1-q2 -> z
-void opString( FILE *f, struct IC *p, const char *opStr ) {
+void opString2( FILE *f, struct IC *p, const char *opStr ) {
     struct obj *q1 = &p->q1;
     struct obj *q2 = &p->q2;
     struct obj *z  = &p->z;
@@ -348,7 +387,7 @@ void opString( FILE *f, struct IC *p, const char *opStr ) {
         emit(f,"\n");
         return;
     }
-    UNHANDLED_CASE("ADD ? -> ?");
+    UNHANDLED_CASE("opString2 ? -> ?");
 }
 
 int computeVarStackMinMax( struct obj *o, int minMax ){
@@ -719,9 +758,9 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (COND==c)         { printf("COND\n");         }
         if (LOR==c)          { printf("LOR\n");          }
         if (LAND==c)         { printf("LAND\n");         }
-        if (OR==c)           { opString(f,p,"OR");       }
-        if (XOR==c)          { opString(f,p,"XOR");      }
-        if (AND==c)          { opString(f,p,"AND");      }
+        if (OR==c)           { opString2(f,p,"OR");      }
+        if (XOR==c)          { opString2(f,p,"XOR");     }
+        if (AND==c)          { opString2(f,p,"AND");     }
         if (EQUAL==c)        { printf("EQUAL\n");        }
         if (INEQUAL==c)      { printf("INEQUAL\n");      }
         if (LESS==c)         { printf("LESS\n");         }
@@ -730,11 +769,11 @@ void gen_code( FILE *f, struct IC *p, struct Var *v, zmax offset) {
         if (GREATEREQ==c)    { printf("GREATEREQ\n");    }
         if (LSHIFT==c)       { printf("LSHIFT\n");       }
         if (RSHIFT==c)       { printf("RSHIFT\n");       }
-        if (ADD==c)          { opString(f,p,"ADD");      }
-        if (SUB==c)          { opString(f,p,"SUB");      }
-        if (MULT==c)         { opString(f,p,"MULT");     }
-        if (DIV==c)          { opString(f,p,"DIV");      }
-        if (MOD==c)          { opString(f,p,"MOD");      }
+        if (ADD==c)          { opString2(f,p,"ADD");     }
+        if (SUB==c)          { opString2(f,p,"SUB");     }
+        if (MULT==c)         { opString2(f,p,"MULT");    }
+        if (DIV==c)          { opString2(f,p,"DIV");     }
+        if (MOD==c)          { opString2(f,p,"MOD");     }
         if (NEGATION==c)     { printf("NEGATION\n");     }
         if (KOMPLEMENT==c)   { printf("KOMPLEMENT\n");   }
         if (PREINC==c)       { printf("PREINC\n");       }
