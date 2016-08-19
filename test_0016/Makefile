@@ -20,12 +20,12 @@ all: $(OBJECTS) prog_ram.o
 	ghdl -e $(FLAGS) $(TARGET)
 
 ram: zpuramgen
-	$(ZPUCCDIR)/bin/zpu-elf-gcc $(ZPUFLAGS) -o $(MAIN).elf crt0_phi.S $(MAIN).c -phi -Wl,--gc-sections -abel -Wl,--relax -nostdlib $(ZPUCCOPT)
-	$(ZPUCCDIR)/bin/zpu-elf-objdump --disassemble-all $(MAIN).elf > $(MAIN).dis
-	$(ZPUCCDIR)/bin/zpu-elf-objcopy -O binary $(MAIN).elf $(MAIN).bin
-	./zpuramgen $(MAIN).bin > prog_ram.vhd
-	chmod -x $(MAIN).bin
-	chmod -x $(MAIN).elf
+	#$(ZPUCCDIR)/bin/zpu-elf-gcc $(ZPUFLAGS) -o $(MAIN).elf crt0_phi.S $(MAIN).c -phi -Wl,--gc-sections -abel -Wl,--relax -nostdlib $(ZPUCCOPT)
+	#$(ZPUCCDIR)/bin/zpu-elf-objdump --disassemble-all $(MAIN).elf > $(MAIN).dis
+	#$(ZPUCCDIR)/bin/zpu-elf-objcopy -O binary $(MAIN).elf $(MAIN).bin
+	#./zpuramgen $(MAIN).bin > prog_ram.vhd
+	#chmod -x $(MAIN).bin
+	#chmod -x $(MAIN).elf
 
 zpuramgen:
 	gcc -o zpuramgen zpuramgen.c
@@ -37,6 +37,7 @@ prog_ram.o: ram
 	ghdl -a $(FLAGS) prog_ram.vhd
 
 run:
+	$(RM) -rf simulation.txt
 	ghdl -r $(TARGET) --wave=test.ghw --stop-time=$(SIM_TIME)
 
 bit:

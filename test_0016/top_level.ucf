@@ -1,0 +1,40 @@
+# Pin Assignments
+NET "CLK"      LOC = "p77"  ;
+NET "RESET"    LOC = "p57"  ;
+
+NET "IO_Port0<0>"  LOC = "p55"  ;
+NET "IO_Port0<1>"  LOC = "p56"  ;
+NET "IO_Port0<2>"  LOC = "p58"  ;
+NET "IO_Port0<3>"  LOC = "p59"  ;
+NET "IO_Port0<4>"  LOC = "p60"  ;
+NET "IO_Port0<5>"  LOC = "p61"  ;
+NET "IO_Port0<6>"  LOC = "p62"  ;
+NET "IO_Port0<7>"  LOC = "p63"  ;
+NET "IO_Port0<8>"  LOC = "p64"  ;
+
+NET "IO_Port0<9>"  LOC = "p71"  ;
+NET "IO_Port0<10>" LOC = "p102"  ;
+NET "IO_Port0<11>" LOC = "p100"  ;
+NET "IO_Port0<12>" LOC = "p73"  ;
+NET "IO_Port0<13>" LOC = "p68"  ;
+NET "IO_Port0<14>" LOC = "p69"  ;
+NET "IO_Port0<15>" LOC = "p70"  ;
+
+NET "IO_Port0<16>" LOC = "p108"  ;
+NET "IO_Port0<17>" LOC = "p81"  ;
+NET "IO_Port0<18>" LOC = "p82"  ;
+NET "IO_Port0<19>" LOC = "p83"  ;
+NET "IO_Port0<20>" LOC = "p96"  ;
+NET "IO_Port0<21>" LOC = "p101"  ;
+NET "IO_Port0<22>" LOC = "p86"  ;
+NET "IO_Port0<23>" LOC = "p87"  ;
+
+NET "IO_Port0<24>" LOC = "p88"  ;
+NET "IO_Port0<25>" LOC = "p89"  ;
+NET "IO_Port0<26>" LOC = "p97"  ;
+NET "IO_Port0<27>" LOC = "p98"  ;
+NET "IO_Port0<28>" LOC = "p99"  ;
+NET "IO_Port0<29>" LOC = "p93"  ;
+NET "IO_Port0<30>" LOC = "p94"  ;
+NET "IO_Port0<31>" LOC = "p95"  ;
+
