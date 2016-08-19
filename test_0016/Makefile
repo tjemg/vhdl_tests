@@ -1,23 +1,33 @@
-ZPUCCDIR = /opt/zpugcc
-ZPUCORE  = zpu_core.vhd
-ZPUCCOPT = -O4
-ZPUFLAGS = -O0
-XILINXDR = /opt/Xilinx/10.1/ISE/bin/lin64
-FLAGS    = --ieee=synopsys
-TARGET   = sim_fpga_top
-DEVICE   = xc2s300e-6-pq208
-SOURCES  = zpu_config.vhd     \
-           zpupkg.vhd         \
-           txt_util.vhd       \
-           $(ZPUCORE)         \
-           fpga_top.vhd       \
-           sim_fpga_top.vhd
-OBJECTS  = $(subst .vhd,.o,$(SOURCES))
-MAIN     = main
-SIM_TIME = 5us
+ZPUCCDIR          = /opt/zpugcc
+ZPUCORE           = zpu_core.vhd
+ZPUCCOPT          = -O4
+ZPUFLAGS          = -O0
+XILINXDR          = /opt/Xilinx/10.1/ISE/bin/lin64
+FLAGS             = --ieee=synopsys
+TARGET            = sim_fpga_top
+DEVICE            = xc2s300e-6-pq208
+SOURCES           = zpu_config.vhd     \
+                    zpupkg.vhd         \
+                    txt_util.vhd       \
+                    $(ZPUCORE)         \
+                    fpga_top.vhd       \
+                    sim_fpga_top.vhd
+OBJECTS           = $(subst .vhd,.o,$(SOURCES))
+MAIN              = main
+SIM_TIME          = 2us
+IEEE_PROPOSED_LIB = std_logic_1164_additions.vhd     \
+                    standard_additions_c.vhd         \
+                    standard_textio_additions_c.vhd
+IEEE_PROPOSED_OBJ = $(subst .vhd,.o,$(IEEE_PROPOSED_LIB))
 
-all: $(OBJECTS) prog_ram.o
+.PHONY: ieee_proposed
+
+all: $(IEEE_PROPOSED_OBJ) $(OBJECTS) prog_ram.o
 	ghdl -e $(FLAGS) $(TARGET)
+
+$(IEEE_PROPOSED_OBJ): $(IEEE_PROPOSED_LIB)
+	ghdl -a $(FLAGS) --work=ieee_proposed $*.vhd
+
 
 ram: zpuramgen
 	#$(ZPUCCDIR)/bin/zpu-elf-gcc $(ZPUFLAGS) -o $(MAIN).elf crt0_phi.S $(MAIN).c -phi -Wl,--gc-sections -abel -Wl,--relax -nostdlib $(ZPUCCOPT)

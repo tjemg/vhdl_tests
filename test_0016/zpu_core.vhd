@@ -42,6 +42,9 @@ library work;
 use work.zpu_config.all;
 use work.zpupkg.all;
 
+--library ieee_proposed;
+--use ieee_proposed.standard_textio_additions.all;
+
 use std.textio.all;
 use work.txt_util.all;
 
@@ -161,6 +164,7 @@ architecture behave of zpu_core is
     signal decodedOpcode       : InsnArray;
     signal opcode              : OpcodeArray;
     signal bytesBitsCnt        : integer;
+    signal stackPointer        : unsigned(maxAddrBitIncIO downto 0);
 
     alias divBuf1 is divBuf((2 * wordSize-1) downto wordSize);
     alias divBuf2 is divBuf(    (wordSize-1) downto 0);
@@ -177,6 +181,9 @@ begin
   incIncSp                                        <= sp + 2;
   decSp                                           <= sp - 1;
   bytesBitsCnt                                    <= to_integer(pc(byteBits-1 downto 0)); -- the lower part of the PC which acts as a counter for the instruction decoder
+
+  stackPointer(maxAddrBitIncIO downto minAddrBit) <= sp;
+  stackPointer(minAddrBit-1    downto 0         ) <= (others => '0');
 
   opcodeControl : process(clk, reset)
       variable tOpcode         : std_logic_vector(OpCode_Size-1 downto 0);
@@ -496,7 +503,8 @@ begin
                               --          this: stackA = stackA<<7 + newOffset
                               --
                               --       b) interrupts are disabled during IM instruction
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : IM          PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file, justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : IM          PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
+                              -- print(l_file,justify(time_to_string(now/,field=>8)1 ns) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : IM          PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag  <= '1';    -- signal execution of IM instruction
                                   pc         <= pc + 1; -- decode next intruction
@@ -523,7 +531,7 @@ begin
                               --       OPCODE: STORESP
                               -- MACHINE CODE: 010xxxxx
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STORESP     PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STORESP     PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   state           <= State_StoreSP2;                -- StoreSP2 required to load stackB in Popped
@@ -539,7 +547,7 @@ begin
                               --       OPCODE: LOADSP
                               -- MACHINE CODE: 011xxxxx
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOADSP      PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOADSP      PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   state           <= State_LoadSP2;
@@ -575,7 +583,7 @@ begin
                               --       OPCODE: CALLPCREL
                               -- MACHINE CODE: 00111110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : CALLPCREL   PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : CALLPCREL   PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   stackA                           <= (others => DontCareValue);
@@ -588,7 +596,7 @@ begin
                               --       OPCODE: CALL
                               -- MACHINE CODE: 00111110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : CALL        PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : CALL        PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   stackA                           <= (others => DontCareValue);
@@ -601,7 +609,7 @@ begin
                               --       OPCODE: ADDSP
                               -- MACHINE CODE: 00111110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ADDSP       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ADDSP       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   state                            <= State_AddSP2;
@@ -613,7 +621,7 @@ begin
                               --       OPCODE: PUSHSP
                               -- MACHINE CODE: 00000010
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : PUSHSP      PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : PUSHSP      PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag                                 <= '0';
                                   pc                                        <= pc + 1;                  -- move to next instruction
@@ -630,7 +638,7 @@ begin
                               --       OPCODE: POP
                               -- MACHINE CODE: 01010000
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPPC       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPPC       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   pc              <= stackA(maxAddrBitIncIO downto 0);                  -- next instruction at address stackA
@@ -645,7 +653,7 @@ begin
                               --       OPCODE: POPPCREL
                               -- MACHINE CODE: 00111001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPPCREL    PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPPCREL    PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   pc              <= stackA(maxAddrBitIncIO downto 0) + pc;             -- next instruction at address stackA+PC
@@ -662,14 +670,14 @@ begin
                               -- set idim_flag to '0'
                               -- TODO: optimize this state? We are at state
                               --       Execute, but can already do more stuff than 'nothing'...
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ASFHL       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ASFHL       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               shiftA     <= stackA;              -- load old stackA into stackA
                               shiftB     <= stackB;              -- load old stackB into stackB
                               state      <= State_AShiftLeft2;   -- go to state AshiftLeft2
 
                           when Insn_AShiftRight =>
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ASFHR       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ASFHR       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               --       OPCODE: ASHIFTRIGHT
                               -- MACHINE CODE: 00101100
                               -- set idim_flag to '0'
@@ -686,7 +694,7 @@ begin
                               -- set idim_flag to '0'
                               -- TODO: optimize this state? We are at state
                               --       Execute, but can already do more stuff than 'nothing'...
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LSFHR       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LSFHR       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               shiftA     <= stackA;              -- load old stackA into stackA
                               shiftB     <= stackB;              -- load old stackB into stackB
@@ -696,7 +704,7 @@ begin
                               --       OPCODE: ADD
                               -- MACHINE CODE: 00000101
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ADD         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ADD         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   stackA         <= stackA + stackB;            -- new stackA = old stackA + old stackB
@@ -710,7 +718,7 @@ begin
                               --       OPCODE: SUB
                               -- MACHINE CODE: 00110001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : SUB         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : SUB         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   binaryOpResult <= stackB - stackA;       -- binary result stackB-stackA
@@ -722,7 +730,7 @@ begin
                               -- MACHINE CODE: 01010000 (STORESP 0)
                               -- set idim_flag to '0'
                               -- NOTE: this is actually an improved implementation of STORESP 0
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POP         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POP         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                         -- we wish to read from memory
@@ -738,7 +746,7 @@ begin
                               -- set idim_flag to '0'
                               -- NOTE: 1) improved implementation of STORESP 1
                               --       2) PopDown leaves TOS unchanged
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPDOWN     PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPDOWN     PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                        -- we wish to read from memory
@@ -751,7 +759,7 @@ begin
                               --       OPCODE: OR
                               -- MACHINE CODE: 00000111
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : OR          PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : OR          PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   stackA         <= stackA or stackB;           -- new stackA = old stackA OR stackB
@@ -765,7 +773,7 @@ begin
                               --       OPCODE: AND
                               -- MACHINE CODE: 00000110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : AND         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : AND         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   stackA         <= stackA and stackB;          -- new stackA = old stackA AND stackB
@@ -779,7 +787,7 @@ begin
                               --       OPCODE: XOR
                               -- MACHINE CODE: 00110010
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : XOR         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : XOR         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   stackA         <= stackA xor stackB;          -- new stackA = old stackA XOR stackB
@@ -793,7 +801,7 @@ begin
                               --       OPCODE: EQ
                               -- MACHINE CODE: 00101110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : EQ          PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : EQ          PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag  <= '0';
                                   binaryOpResult <= (others => '0');    -- make sure all bits of result are set to '0'
@@ -807,7 +815,7 @@ begin
                               --       OPCODE: NEQ
                               -- MACHINE CODE: 00101111
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NEQ         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NEQ         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag  <= '0';
                                   binaryOpResult <= (others => '0');    -- make sure all bits of result are set to '0'
@@ -821,7 +829,7 @@ begin
                               --       OPCODE: NEG
                               -- MACHINE CODE: 00110000
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NEG         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NEG         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               pc         <= pc + 1;         -- next instruction
                               stackA     <= 1 + not stackA; -- two's complement
@@ -830,7 +838,7 @@ begin
                               --       OPCODE: ULESSTHAN
                               -- MACHINE CODE: 00100101
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ULT         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ULT         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag  <= '0';
                                   binaryOpResult <= (others => '0');  -- make sure all bits of result are set to '0'
@@ -844,7 +852,7 @@ begin
                               --       OPCODE: ULESSTHANOREQUAL
                               -- MACHINE CODE: 00100110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ULTOE       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ULTOE       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   binaryOpResult <= (others => '0');  -- make sure all bits of result are set to '0'
@@ -858,7 +866,7 @@ begin
                               --       OPCODE: LESSTHAN
                               -- MACHINE CODE: 00100100
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LT          PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LT          PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   binaryOpResult <= (others => '0');         -- make sure all bits of result are set to '0'
@@ -872,7 +880,7 @@ begin
                               --       OPCODE: LESSTHAN
                               -- MACHINE CODE: 00100101
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LTOE        PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LTOE        PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag          <= '0';
                                   binaryOpResult     <= (others => '0');      -- make sure all bits of result are set to '0'
@@ -886,7 +894,7 @@ begin
                               --       OPCODE: LOAD
                               -- MACHINE CODE: 00001000
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOAD        PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOAD        PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                                                          -- we wish to read from memory
@@ -898,7 +906,7 @@ begin
                               --       OPCODE: DUP
                               -- MACHINE CODE: 01110000
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : DUP         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : DUP         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   pc              <= pc + 1;                     -- execute next instruction
@@ -913,7 +921,7 @@ begin
                               --       OPCODE: DUPSTACKB
                               -- MACHINE CODE: 01110001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : DUPSTACKB   PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : DUPSTACKB   PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0'; 
                                   pc              <= pc + 1;                     -- execute next instruction
@@ -929,7 +937,7 @@ begin
                               --       OPCODE: STORE
                               -- MACHINE CODE: 00001100
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STORE       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STORE       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   pc              <= pc + 1;                                                       -- execute next instruction
@@ -944,7 +952,7 @@ begin
                               --       OPCODE: POPSP
                               -- MACHINE CODE: 00001101
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPSP       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : POPSP       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag       <= '0';
                                   pc              <= pc + 1;                                     -- execute next instruction
@@ -959,7 +967,7 @@ begin
                               --       OPCODE: NOP
                               -- MACHINE CODE: 00001011
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NOP         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NOP         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               pc         <= pc + 1;  -- execute next instruction
 
@@ -967,7 +975,7 @@ begin
                               --       OPCODE: NOT
                               -- MACHINE CODE: 00001001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NOT         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NOT         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               pc         <= pc + 1;     -- next instruction
                               stackA     <= not stackA; -- new stackA = NOT old stackA
@@ -976,7 +984,7 @@ begin
                               --       OPCODE: FLIP
                               -- MACHINE CODE: 00001010
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : FLIP        PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : FLIP        PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               pc         <= pc + 1;                   -- next instruction
                               for i in 0 to wordSize-1 loop
@@ -987,7 +995,7 @@ begin
                               --       OPCODE: ADDTOP
                               -- MACHINE CODE: 00010001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ADDTOP      PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : ADDTOP      PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               pc         <= pc + 1;          -- next instruction
                               stackA     <= stackA + stackB; -- new stackA = old stackA + old stackB
@@ -996,7 +1004,7 @@ begin
                               --       OPCODE: SHIFT
                               -- MACHINE CODE: 00010000
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : SHIFT       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : SHIFT       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag                   <= '0';
                               pc                          <= pc + 1;                       -- next instruction
                               stackA(wordSize-1 downto 1) <= stackA(wordSize-2 downto 0);  -- double stackA value
@@ -1006,7 +1014,7 @@ begin
                               --       OPCODE: PUSHSPADD
                               -- MACHINE CODE: 00111101
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : PUSHSPADD   PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : PUSHSPADD   PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag                                 <= '0';
                               pc                                        <= pc + 1;                                           -- next instruction
                               stackA                                    <= (others => '0');                                  -- make sure other bits of stackA are set to '0'
@@ -1016,7 +1024,7 @@ begin
                               --       OPCODE: PUSHPC
                               -- MACHINE CODE: 00111011
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : PUSHPC      PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : PUSHPC      PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag                        <= '0';
                                   pc                               <= pc + 1;                   -- next instruction
@@ -1035,7 +1043,7 @@ begin
                               -- MACHINE CODE: 00111000
                               -- set idim_flag to '0'
                               -- NOTE: branches are almost always taken as they form loops
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NEQBR       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : NEQBR       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag <= '0';
                               sp        <= incIncSp;                                   -- we effectively pop two values
                               if (stackB /= 0) then                                    -- compare stackB with zero
@@ -1049,7 +1057,7 @@ begin
                               --       OPCODE: EQBRANCH
                               -- MACHINE CODE: 00110111
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : EQBR        PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : EQBR        PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag <= '0';
                               sp        <= incIncSp;                                   -- we effectively pop two values
                               if (stackB = 0) then                                     -- compare stackB with zero
@@ -1063,7 +1071,7 @@ begin
                               --       OPCODE: MULT
                               -- MACHINE CODE: 00101001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : MULT        PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : MULT        PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               multA      <= stackA;       -- load multA variable with stackA
                               multB      <= stackB;       -- load multB variable with stackB
@@ -1073,7 +1081,7 @@ begin
                               --       OPCODE: DIV
                               -- MACHINE CODE: 00110101
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : DIV         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : DIV         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               if (stackB = 0) then
                                   state  <= State_Div3;  -- go to Div3 state
@@ -1102,7 +1110,7 @@ begin
                               --       OPCODE: MOD
                               -- MACHINE CODE: 00110110
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : MOD         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : MOD         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               idim_flag  <= '0';
                               report "MOD" severity note;
                               if (stackB = 0) then
@@ -1132,7 +1140,7 @@ begin
                               --       OPCODE: BREAK
                               -- MACHINE CODE: 00101001
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : BREAK       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : BREAK       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               report "Break instruction encountered" severity note;
                               break <= '1';
 
@@ -1140,7 +1148,7 @@ begin
                               --       OPCODE: LOADB
                               -- MACHINE CODE: 00110011
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOADB       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOADB       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                                                         -- we wish to read from memory
@@ -1152,7 +1160,7 @@ begin
                               --       OPCODE: LOADH
                               -- MACHINE CODE: 00100010
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOADH       PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : LOADH       PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                                                         -- we wish to read from memory
@@ -1164,7 +1172,7 @@ begin
                               --       OPCODE: STOREB
                               -- MACHINE CODE: 00110100
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STOREB      PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STOREB      PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                                                          -- we wish to read from memory
@@ -1176,7 +1184,7 @@ begin
                               --       OPCODE: STOREH
                               -- MACHINE CODE: 00100011
                               -- set idim_flag to '0'
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STOREH      PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : STOREH      PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               if in_mem_busy = '0' then
                                   idim_flag      <= '0';
                                   mem_readEnable <= '1';                                                          -- we wish to read from memory
@@ -1185,7 +1193,7 @@ begin
                               end if;
                             
                           when others =>
-                              print(l_file,"EXEC     " & " 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : UNK         PC:" & hstr(std_logic_vector(pc)) & " SP: " & str(std_logic_vector(sp)) );
+                              print(l_file,justify(time_to_string(now),field=>8) & " :: 0x" & hstr(opcode(to_integer(nextPC(byteBits-1 downto 0)))) & " : UNK         PC:" & hstr(std_logic_vector(pc)) & "  SP:" & hstr(std_logic_vector(stackPointer)) );
                               sp    <= (others => DontCareValue);
                               break <= '1';
                               report "Illegal instruction" severity failure;

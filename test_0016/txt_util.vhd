@@ -112,12 +112,28 @@ package txt_util is
     -- print character to a file and start new line
     procedure print(file out_file : text; char : in character);
 
+    -- appends contents of a string to a file until line feed occurs
+    -- (LF is considered to be the end of the string)
+    procedure str_write(file out_file : text; new_string : in string);
+
+    -- time to string
+    function time_to_string(t : time; res : in time := ns) return string;
+
+    function justify ( value : in STRING; justified : in SIDE := right; field : in width := 0) return STRING;
 end package txt_util;
 
 
 
 
 package body txt_util is
+
+    -- time to string
+    function time_to_string(t : time; res : in time := ns) return string is
+        variable msg_line : line;
+    begin
+        write(msg_line, t, UNIT => res);
+        return msg_line.all;
+    end function time_to_string;
 
 
     -- prints text to the screen
@@ -534,6 +550,21 @@ package body txt_util is
         end loop;
     end procedure str_write;
 
+  function justify ( value : in STRING; justified : in SIDE := right; field : in width := 0) return STRING is
+    constant VAL_LEN : INTEGER := value'length;
+    variable result : STRING (1 to field) := (others => ' ');
+  begin  -- function justify
+    -- return value if field is too small
+    if VAL_LEN >= field then
+      return value;
+    end if;
+    if justified = left then
+      result(1 to VAL_LEN) := value;
+    elsif justified = right then
+      result(field - VAL_LEN + 1 to field) := value;
+    end if;
+    return result;
+  end function justify;
 
 end package body txt_util;
 
